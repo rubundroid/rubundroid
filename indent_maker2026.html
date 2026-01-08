@@ -1857,41 +1857,60 @@ function toggleCategoryMenu() {
 }
 
 // 1. നിലവിലെ ഫയൽ വേർഷൻ (അടുത്ത തവണ ഇത് 1.1 ആക്കി മാറ്റണം)
-// 1. നിലവിലെ ഫയൽ വേർഷൻ (അടുത്ത തവണ ഇത് 1.1 ആക്കി മാറ്റണം)
-const currentVersion = 1.0; 
 
-// 2. GitHub-ലെ version.json ഫയലിന്റെ RAW ലിങ്ക് ഇവിടെ നൽകുക
-const versionUrl = "https://raw.githubusercontent.com/rubundroid/rubundroid/main/version.json";
+    // 1. നിങ്ങളുടെ നിലവിലെ ഫയൽ വേർഷൻ (ഓരോ തവണ മാറ്റം വരുത്തുമ്പോഴും ഇത് കൂട്ടുക)
+    const currentVersion = 1.1; 
 
-async function checkForUpdate() {
-    try {
-        // ഇന്റർനെറ്റ് ഉണ്ടെങ്കിൽ മാത്രം ചെക്ക് ചെയ്യും
-        if (!navigator.onLine) return;
+    // 2. GitHub-ലെ version.json ഫയലിന്റെ ശരിയായ RAW ലിങ്ക്
+    const versionUrl = "https://raw.githubusercontent.com/rubundroid/rubundroid/main/version.json";
 
-        const response = await fetch(versionUrl, { cache: "no-store" });
-        const data = await response.json();
+    async function checkForUpdate() {
+        try {
+            // ഇന്റർനെറ്റ് ഇല്ലെങ്കിൽ ചെക്കിംഗ് ഒഴിവാക്കും
+            if (!navigator.onLine) return;
 
-        // വേർഷൻ വ്യത്യാസം ഉണ്ടെങ്കിൽ മാത്രം പോപ്പ്-അപ്പ് കാണിക്കും
-        if (data.latestVersion > currentVersion) {
-            const msg = `പുതിയ അപ്ഡേറ്റ് ലഭ്യമാണ് (V${data.latestVersion}).\n\nപുതിയ ഫയൽ ഡൗൺലോഡ് ചെയ്യണോ?`;
-            if (confirm(msg)) {
-// ഡൗൺലോഡ് നിർബന്ധമാക്കാൻ ഈ ഫങ്ക്ഷൻ ഉപയോഗിക്കാം
-const link = document.createElement('a');
-link.href = data.downloadUrl;
-link.download = 'indentmaker.html'; // ഫയലിന് നൽകേണ്ട പേര്
-link.click();
+            // GitHub-ൽ നിന്ന് പുതിയ വേർഷൻ വിവരം എടുക്കുന്നു (Cache ഒഴിവാക്കാൻ {cache: "no-store"} ചേർത്തു)
+            const response = await fetch(versionUrl, { cache: "no-store" });
+            const data = await response.json();
 
+            // വേർഷൻ താരതമ്യം ചെയ്യുന്നു
+            if (data.latestVersion > currentVersion) {
+                const msg = `പുതിയ അപ്ഡേറ്റ് ലഭ്യമാണ് (V${data.latestVersion}).\n\nഈ ഫയൽ അപ്ഡേറ്റ് ചെയ്ത് പുതിയത് ഡൗൺലോഡ് ചെയ്യണോ?`;
+                
+                if (confirm(msg)) {
+                    // ഡൗൺലോഡ് പ്രോസസ്സ് തുടങ്ങുന്നു
+                    forceDownload(data.downloadUrl, `Medicine_Indent_V${data.latestVersion}.html`);
+                }
             }
+        } catch (error) {
+            console.log("Update check failed or skipped:", error);
         }
-    } catch (error) {
-        console.log("Update check skipped."); // സൈലന്റ് ആയി ഒഴിവാക്കും
     }
+
+    // ഫയൽ നേരിട്ട് ഡൗൺലോഡ് ചെയ്യിക്കാനുള്ള ഫങ്ക്ഷൻ
+   function forceDownload(url, fileName) {
+    fetch(url)
+        .then(response => response.blob()) // ഫയലിനെ ഒരു ബ്ലോബ് (Blob) ആയി മാറ്റുന്നു
+        .then(blob => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = fileName; // ഇവിടെയാണ് ഫയൽ പേര് നിശ്ചയിക്കുന്നത്
+            document.body.appendChild(anchor);
+            anchor.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(anchor);
+        })
+        .catch(() => {
+            // എന്തെങ്കിലും കാരണവശാൽ പരാജയപ്പെട്ടാൽ പഴയ ലിങ്ക് വഴി ശ്രമിക്കും
+            window.location.href = url;
+        });
 }
 
-// പേജ് ലോഡ് ആകുമ്പോൾ അപ്ഡേറ്റ് ചെക്ക് ചെയ്യുന്നു
-window.addEventListener('load', checkForUpdate);
-
-
+    // പേജ് ലോഡ് ആയി 3 സെക്കന്റിന് ശേഷം മാത്രം അപ്ഡേറ്റ് നോക്കുന്നു (ലോഡിംഗ് സ്പീഡ് കുറയാതിരിക്കാൻ)
+    window.addEventListener('load', () => {
+        setTimeout(checkForUpdate, 3000);
+    });
 
 </script>
 </body>
