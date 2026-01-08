@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INDENT MAKER</title>
+    <link rel="icon" href="https://lh7-rt.googleusercontent.com/sitesz/AClOY7r8EAd-MozQBaUZg53ApKBhUWzNEmbijFE6tRYDpYwWklQ-rpaqfIVYW0Hke4kVDc1OG9iXK96hH7IY68BUse57I6_m856_oMMfK2NYQbPBx79SchgYrLcQDtubEhaNJO4vlVKHF-6g4ENZ_0ICdcOH3DCOAogzDUnl8mUyRRV9aeMKQrj2?key=FQPiZpt1WHU-kkdRmQtRGg" type="image/x-icon">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; padding: 0; background-color: #f0f2f5; color: #333;
+        }
+        
+/* സ്റ്റിക്കി കണ്ടെയ്നറിന് കൃത്യമായ ഒരു ഐഡി നൽകുന്നു (ഉദാഹരണത്തിന് 180px) */
+.sticky-header-container {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1000;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    /* ഹെഡറിന്റെ ഹൈറ്റ് ഏകദേശം സ്ഥിരമായി നിർത്താൻ സഹായിക്കുന്നു */
+    min-height: 100px; 
+}
+
+        .header-section { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto 15px;
+        }
+
+        .input-group { display: flex; flex-direction: column; }
+        
+        label { font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #444; }
+        
+        input, textarea { 
+            padding: 10px; border: 1px solid #ced4da; border-radius: 6px; 
+            font-size: 14px; transition: border 0.3s;
+        }
+
+        input:focus, textarea:focus { border-color: var(--accent-color); outline: none; }
+
+        #medicineSearch { 
+            width: 92%; padding: 12px 20px; border: 2px solid var(--accent-color); 
+            border-radius: 30px; font-size: 16px; margin-top: 10px;
+        }
+        
+        .summary-buttons { 
+            display: flex; gap: 15px; max-width: 900px; margin: 0 auto;
+        }
+
+        .info-card { 
+            padding: 3px 8px; border-radius: 3px; flex: 1; 
+            text-align: center; color: white; font-weight: bold;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .card-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
+        .card-value { font-size: 18px; }
+
+        .btn-total { background-color: var(--success-color); }
+        .btn-balance { background-color: var(--accent-color); }
+        .btn-pdf { 
+            background-color: #8e44ad !important; cursor: pointer; border: none;
+            transition: transform 0.2s; font-size: 15px;
+        }
+        
+        /* എല്ലാ ഇൻഫോ കാർഡുകൾക്കും ബട്ടണുകൾക്കും ഹോവർ എഫക്റ്റ് */
+.info-card {
+    transition: transform 0.2s, filter 0.2s; /* മാറ്റം സുഗമമാക്കാൻ */
+}
+
+.info-card:hover {
+    transform: translateY(-3px); /* അല്പം മുകളിലേക്ക് ഉയരാൻ */
+    filter: brightness(1.1); /* അല്പം തെളിച്ചം കൂട്ടാൻ */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* ചെറിയ നിഴൽ നൽകാൻ */
+}
+
+/* PDF ബട്ടന്റെ പുതിയ നിറം (ഉദാഹരണത്തിന് കടും നീല അല്ലെങ്കിൽ വയലറ്റ്) */
+
+
+    /* ടേബിൾ ബോഡിക്ക് മാത്രം സ്ക്രോളിംഗ് നൽകുക (ഇതാണ് ഏറ്റവും നല്ല വഴി) */
+.table-container {
+    max-height: 80vh; /* സ്ക്രീനിന്റെ 70% മാത്രം ടേബിൾ കാണുക */
+    overflow-y: auto; /* ബാക്കി സ്ക്രോൾ ചെയ്യുക */
+    border: 1px solid #ddd;
+    margin: 0 auto; /* ടേബിൾ സെന്ററിൽ വരാൻ */
+    max-width: 1200px; /* വലിയ സ്ക്രീനിൽ വീതി നിയന്ത്രിക്കാൻ */
+}
+        
+        table { 
+            width: 100%; border-collapse: collapse; background: white; 
+            border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* ടേബിൾ ഹെഡർ ഫ്രീസ് ചെയ്യാനുള്ള കോഡ് */
+thead th {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px;
+    text-align: left;
+    position: sticky;
+    /* ഹെഡർ ഭാഗത്തിന്റെ ഏകദേശ ഹൈറ്റ് അനുസരിച്ച് ഇത് ക്രമീകരിക്കുക */
+    top: 0px; 
+    z-index: 100;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+}
+
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+        
+        .row-active { background-color: #f0f9ff !important; }
+        .qty-input { 
+            width: 80px; padding: 6px; text-align: center; 
+            border: 1px solid #ddd; border-radius: 4px; font-weight: bold;
+        }
+
+
+
+/* മരുന്നിന്റെ പേര് മാത്രം ബോൾഡ് ആക്കാൻ */
+#product-body td:nth-child(2) {
+    font-weight: bold;
+}
+
+/* ടോട്ടൽ കോസ്റ്റ് മാത്രം ബോൾഡ് ആക്കാൻ */
+.row-cost {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+@media screen and (max-height: 500px) and (orientation: landscape) {
+    .sticky-header-container {
+        padding: 3px 10px;
+    }
+    .compact-input {
+        height: 24px;
+    }
+    .table-container {
+        max-height: 55vh;
+    }
+}
+
+/* കാറ്റഗറി മെനുവിനെ ഒരു ഗ്രിഡ് ആക്കുന്നു */
+/* കാറ്റഗറി മെനു സെറ്റിംഗ്സ് */
+#categoryMenu {
+    display: none; /* തുടക്കത്തിൽ ഹൈഡ് ചെയ്യുന്നു */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 2000;
+    width: 600px;
+    padding: 10px;
+    border-radius: 8px;
+    gap: 8px;
+    /* grid-template-columns ഇവിടെ നൽകേണ്ടതില്ല, അത് മെനു ഓപ്പൺ ആകുമ്പോൾ നൽകാം */
+}
+
+/* ഇത് ആഡ് ചെയ്യുമ്പോൾ മാത്രം ഗ്രിഡ് വരും */
+#categoryMenu.show-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.cat-item {
+    padding: 10px;
+    cursor: pointer;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    transition: 0.1s;
+}
+
+.cat-item:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+/* ടൈപ്പ് ബട്ടൺ സ്റ്റൈൽ - മറ്റ് ബട്ടണുകൾക്ക് തുല്യമാക്കാൻ */
+#typeBtn {
+    flex: 1; /* summary-buttons ഉള്ളിലാണെങ്കിൽ ഇത് സഹായിക്കും */
+    min-height: 32px;
+}
+
+@media screen and (max-width: 600px) {
+    #categoryMenu.show-grid {
+        width: 300px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* റേറ്റ് ഫൈൻഡ് കണ്ടെയ്നർ */
+.rate-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+    max-width: 350px; /* ഡെസ്ക്ടോപ്പിൽ വീതി കൂടാതിരിക്കാൻ */
+}
+
+/* ഇൻപുട്ട് ബോക്സ് */
+.compact-input {
+width: 30px; 
+padding: 12px 20px; 
+border: 2px solid var(--accent-color); 
+border-radius: 30px; 
+font-size: 16px; 
+margin-top: 10px;
+}
+
+/* ഫൈൻഡ് ബട്ടൺ */
+.find-btn {
+    height: 40px;
+    padding: 12px 20px;
+    background: #2c3e50;
+    color: white;
+    border: 2px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap; /* ടെക്സ്റ്റ് താഴേക്ക് പോകാതിരിക്കാൻ */
+    margin-top: 10px;
+}
+
+/* മൊബൈൽ ഫോണുകൾക്കായി (Responsive) */
+@media screen and (max-width: 480px) {
+    .rate-container {
+        max-width: 100%; /* മൊബൈലിൽ മുഴുവൻ വീതി എടുക്കും */
+    }
+    .compact-input {
+        height: 26px; /* മൊബൈലിൽ ഉയരം വീണ്ടും കുറച്ചു */
+        font-size: 12px;
+    }
+    .find-btn {
+        height: 26px;
+        padding: 0 8px;
+    }
+}
+
+
+    </style>
+</head>
+<body>
+
+
+
+<div class="sticky-header-container">
+    <div class="header-section" style="grid-template-columns: 1.5fr 1fr; gap: 15px;">
+        
+        <div class="input-group">
+            <label style="font-size: 14px; color: var(--primary-color);">Institution Name & Address:</label>
+            <textarea id="inst-details" rows="3" placeholder=" Name of institution...,&#10; District...,&#10; Localbody..." 
+                      oninput="saveDraft()" style="font-size: 15px; border: 1px solid #3498db; width: 100%; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div class="input-group">
+            <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+                <div style="flex: 1;">
+                    <label>Indent Type:</label>
+                    <input type="text" id="indent-type" placeholder="Term-1/LSGD/NAM..." 
+       oninput="saveDraft()" 
+       style="width: 100%; border: 2px solid #3498db; font-weight: bold; box-sizing: border-box; 
+              padding: 5px 8px; height: 32px; font-size: 13px;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Total Budget (₹):</label>
+                    <input type="number" id="total-budget" placeholder="₹" 
+       oninput="calculateAll(); saveDraft()" 
+       style="width: 100%; font-weight: bold; border: 2px solid #27ae60; box-sizing: border-box; 
+              padding: 5px 8px; height: 32px; font-size: 13px;">
+                </div>
+            </div>
+
+            <div class="file-manager" style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 5px;">
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                    <select id="savedIndentsList" style="flex: 1; padding: 5px; font-size: 12px;">
+                        <option value="">-- Saved Files --</option>
+                    </select>
+                    <button onclick="loadSelectedIndent()" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">LOAD</button>
+                    <button onclick="deleteSelectedIndent()" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">DEL</button>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="newIndentName" placeholder="File Name" style="flex: 1; padding: 5px; font-size: 12px;">
+                    <button onclick="saveNewIndent()" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">SAVE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; max-width: 1200px; margin: 10px auto;">
+        
+
+        
+        <div class="input-group">
+            <input type="text" id="medicineSearch" placeholder="🔍 Search medicines here..." onkeyup="filterMedicines()" 
+                   style="width: 100%; border-radius: 25px; border: 2px solid var(--primary-color); padding: 10px 20px; box-sizing: border-box; font-size: 15px;">
+        </div>
+  <div class="rate-container">
+    <input type="text" id="rateRange" class="compact-input" placeholder="🔍 Search Rate: 40-50"
+/style="width: 100%; border-radius: 25px; border: 2px solid var(--primary-color); padding: 10px 20px; box-sizing: border-box; font-size: 15px;">    
+    <button class="find-btn" onclick="filterByRate()">FIND</button>
+</div>      
+
+   </div> 
+
+<div class="summary-buttons" style="max-width: 1200px; margin-top: 15px;">
+    <div class="info-card btn-total">
+        <span class="card-label">Total</span>
+        <span class="card-value">₹ <span id="display-total">0.00</span></span>
+    </div>
+    <div class="info-card btn-balance">
+        <span class="card-label">Balance</span>
+        <span class="card-value">₹ <span id="display-balance">0.00</span></span>
+    </div>
+
+    <button id="view-btn" class="info-card" style="background-color: #f39c12; border:none; cursor:pointer;" onclick="toggleView()">SHOW SELECTED</button>
+
+
+    
+<div style="position: relative; flex: 1; display: flex;">
+    <button id="typeBtn" class="info-card" style="background: #2c3e50; width: 100%;" onclick="toggleCategoryMenu()">TYPE ▾</button>
+    
+    <div id="categoryMenu">
+        <div class="cat-item" onclick="filterByCategory(0, 9999, 'ALL')">ALL</div>
+        <div class="cat-item" onclick="filterByCategory(1, 75, 'ARISHTAS')">ARISHTAS</div>
+        <div class="cat-item" onclick="filterByCategory(76, 99, 'BHASMAN')">BHASMAN</div>
+        <div class="cat-item" onclick="filterByCategory(100, 243, 'CHOORNA')">CHOORNA</div>
+        <div class="cat-item" onclick="filterByCategory(244, 309, 'GHRUTHA')">GHRUTHA</div>
+        <div class="cat-item" onclick="filterByCategory(310, 369, 'GULIKA')">GULIKA</div>
+        <div class="cat-item" onclick="filterByCategory(370, 417, 'KASHAYAM')">KASHAYAM</div>
+        <div class="cat-item" onclick="filterByCategory(418, 544, 'KC')">KC</div>
+        <div class="cat-item" onclick="filterByCategory(545, 567, 'KSC')">KSC</div>
+        <div class="cat-item" onclick="filterByCategory(568, 626, 'LEHYAM')">LEHYAM</div>
+        <div class="cat-item" onclick="filterByCategory(627, 632, 'OINTMENT')">OINTMENT</div>
+        <div class="cat-item" onclick="filterByCategory(633, 634, 'RASAKRIY')">RASAKRIY</div>
+        <div class="cat-item" onclick="filterByCategory(635, 638, 'SYRUP')">SYRUP</div>
+        <div class="cat-item" onclick="filterByCategory(639, 922, 'THAILAM')">THAILAM</div>
+    </div>
+</div>
+
+ <div class="summary-buttons">
+    <button class="info-card btn-pdf" style="background: #8e44ad;" onclick="downloadSplitPDF()">SPLIT PDF (KC/Prep)</button>
+    <button class="info-card" style="background: #2980b9; cursor:pointer;" onclick="downloadCombinedPDF()">COMBINED PDF</button>
+    
+    </div>
+
+    <button class="info-card" style="background-color: #e74c3c; border:none; cursor:pointer;" onclick="resetForm()">RESET</button>
+</div>
+</div>
+
+
+<div class="table-container">
+    <table id="medicineTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;">SL</th>
+                <th>Medicine Name</th>
+                <th style="width: 100px; text-align: center;">Qty</th>
+                <th style="width: 100px; text-align: right;">Rate</th>
+                <th style="width: 120px; text-align: right;">Cost</th>
+            </tr>
+        </thead>
+        <tbody id="product-body">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // മരുന്നുകളുടെ വിവരങ്ങൾ
+    const rawData = `
+ABAYARISHTAM 200ML	26.25
+ABAYARISHTAM 450ML	52.5
+AHIFANASAVAM 10ML	26.25
+AMRUTHARISHTAM 200ML	30.45
+AMRUTHARISHTAM 450ML	61.95
+ARAGWADHARISHTAM 200ML	32.55
+ARAGWADHARISHTAM 450ML	65.1
+ARAVINDASAVAM 200ML	28.35
+ARAVINDASAVAM 450ML	55.65
+ASOKARISHTAM 200ML	26.25
+ASOKARISHTAM 450ML	51.45
+ASWAGANDHARISHTAM 200ML	47.25
+ASWAGANDHARISHTAM 450ML	98.7
+AYASKRITHI 200ML	29.4
+AYASKRITHI 450ML	59.85
+BALARISHTAM 200ML	32.55
+BALARISHTAM 450ML	65.1
+CHANDANASAVAM 200ML	25.2
+CHANDANASAVAM 450ML	50.4
+CHAVIKASAVAM 200ML	35.7
+CHAVIKASAVAM 450ML	72.45
+DANTHYARISHTAM 200ML	27.3
+DANTHYARISHTAM 450ML	54.6
+DASAMOOLARISHTAM 200ML	36.75
+DASAMOOLARISHTAM 450ML	76.65
+DHANWANTHARISHTAM 200ML	33.6
+DHANWANTHARISHTAM 450ML	69.3
+DRAKSHARISHTAM 200ML	36.75
+DRAKSHARISHTAM 450ML	76.65
+DURALABHARISHTAM 200ML	30.45
+DURALABHARISHTAM 450ML	61.95
+JEERAKARISHTAM 200ML	44.1
+JEERAKARISHTAM 450ML	91.35
+KANAKASAVAM 200ML	24.15
+KANAKASAVAM 450ML	46.2
+KARPOORASAVAM 10ML	22.05
+KHADIRARISHTAM 200ML	38.85
+KHADIRARISHTAM 450ML	79.8
+KUMARYASAVAM 200ML	32.55
+KUMARYASAVAM 450ML	65.1
+KUTAJARISHTAM 200ML	32.55
+KUTAJARISHTAM 450ML	65.1
+LODHRASAVAM 200ML	35.7
+LODHRASAVAM 450ML	72.45
+LOHASAVAM 200ML	28.35
+LOHASAVAM 450ML	57.75
+MADHOOKASAVAM 200ML	44.1
+MADHOOKASAVAM 450ML	91.35
+MOOLAKASAVAM 450ML	95.55
+MRUDWEEKARISHTAM 200ML	38.85
+MRUDWEEKARISHTAM 450ML	79.8
+MUSTHARISHTAM 200ML	28.35
+MUSTHARISHTAM 450ML	57.75
+PARTHARISHTAM 200ML	29.4
+PARTHARISHTAM 450ML	58.8
+PIPPALYASAVAM 200ML	28.35
+PIPPALYASAVAM 450ML	55.65
+POOTHIKASAVAM 200ML	28.35
+POOTHIKASAVAM 450ML	55.65
+PUNARNAVASAVAM 200ML	26.25
+PUNARNAVASAVAM 450ML	52.5
+ROHITHAKARISHTAM 200ML	28.35
+ROHITHAKARISHTAM 450ML	55.65
+SARASWATHARISHTAM (GOLD) 10ML	275.1
+SARIBADYASAVAM 200ML	32.55
+SARIBADYASAVAM 450ML	65.1
+USEERASAVAM 200ML	28.35
+USEERASAVAM 450ML	57.75
+VASARISHTAM 200ML	37.8
+VASARISHTAM 450ML	77.7
+VEPPUKADY 200ML	19.95
+VEPPUKADY 450ML	36.75
+VEPPUKADY 5000ML	367.5
+VIDARYADYASAVAM 200ML	34.65
+VIDARYADYASAVAM 450ML	70.35
+ABHRA BHASMAM 10GM	161.7
+ABHRA BHASMAM 5GM	81.9
+ANNABHEDI SINDHOORAM 10GM	56.7
+ANNABHEDI SINDHOORAM 20GM	109.2
+ANNABHEDI SINDHOORAM 5GM	29.4
+AVALTHOLADI BHASMAM 100GM	182.7
+AVALTHOLADI BHASMAM 50GM	93.45
+GANDHAKA RASAYANAM 10GM	50.4
+GANDHAKA RASAYANAM 25GM	121.8
+GANDHAKA RASAYANAM 5GM	26.25
+KANTHA SINDHOORAM 10GM	52.5
+KANTHA SINDHOORAM 5GM	28.35
+LOHA SINDHOORAM 10GM	66.15
+LOHA SINDHOORAM 25GM	161.7
+LOHA SINDHOORAM 5GM	33.6
+MANDOORA BHASMAM 10GM	102.9
+MANDOORA BHASMAM 20GM	202.65
+PANAVIRALADI BHASMAM 100GM	56.7
+PANAVIRALADI BHASMAM 50GM	30.45
+PRAVALA BHASMAM 10GM	288.75
+PRAVALA BHASMAM 20GM	574.35
+PRAVALA BHASMAM 5GM	145.95
+SANGHU BASMAM 10GM	48.3
+SANGHU BASMAM 5GM	26.25
+ABHAYA CHOORNAM 500GM	129.15
+ABHAYA CHOORNAM 50GM	14.7
+ABHAYADI CHOORANAM 500GM	425.25
+ABHAYADI CHOORANAM 50GM	44.1
+AGNIMUGHA CHOORNAM 500GM	202.65
+AGNIMUGHA CHOORNAM 50GM	22.05
+AMAYA CHOORNAM 500GM	250.95
+AMAYA CHOORNAM 50GM	26.25
+AMRUTHADI CHOORNAM 50GM	25.2
+APARAJITHADOOMA CHOORNAM 50GM	33.6
+ASANA CHOORNAM 10 GM	7.35
+ASANA CHOORNAM 50 GM	18.9
+ASHTA CHOORNAM 10GM	11.55
+ASHTA CHOORNAM 500GM	404.25
+ASHTA CHOORNAM 50GM	42
+ASWAGANDHA CHOORNAM 500GM	418.95
+ASWAGANDHA CHOORNAM 50GM	43.05
+AVIPATHI CHOORNAM 10GM	11.55
+AVIPATHI CHOORNAM 500GM	382.2
+AVIPATHI CHOORNAM 50GM	39.9
+AVIPATHIKARA CHOORNAM 500GM	477.75
+AVIPATHIKARA CHOORNAM 50GM	49.35
+AYUSH KWATH 100GM	77.7
+AYUSH KWATH 50GM	40.95
+CHANDANA CHOORNAM 500GM	2719.5
+CHANDANA CHOORNAM 50GM	273
+CHITHRAKA CHOORNAM 500GM	2021.25
+CHITHRAKA CHOORNAM 50GM	203.7
+DADIMASHTAKA CHOORNAM 500GM	327.6
+DADIMASHTAKA CHOORNAM 50GM	34.65
+DANTHI CHOORNAM 500GM	384.3
+DANTHI CHOORNAM 50GM	39.9
+DIABETDRINKS 50GM	21
+ELADI CHOORNAM 500GM	495.6
+ELADI CHOORNAM 50GM	51.45
+ELADIGANA CHOORNAM 500GM	551.25
+ELADIGANA CHOORNAM 50GM	56.7
+GOKSHURA CHOORNAM 500GM	294
+GOKSHURA CHOORNAM 50GM	30.45
+GRUHADHOOMADILEPA CHOORNAM 500GM	264.6
+GRUHADHOOMADILEPA CHOORNAM 50GM	28.35
+GULGULUPANCHAPALA CHOORNAM 50 GM	56.7
+GULGULUPANCHAPALA CHOORNAM 500GM	550.2
+GULUCHEE CHOORNAM 500GM	202.65
+GULUCHEE CHOORNAM 50GM	22.05
+HINGUVACHADI CHOORNAM 500GM	367.5
+HINGUVACHADI CHOORNAM 50GM	37.8
+INTHUPPUKANATHAM 500GM	367.5
+INTHUPPUKANATHAM 50GM	37.8
+JATAMAYADILEPA CHOORNAM 200GM	147
+JEERAKA  CHOORNAM 500GM	610.05
+JEERAKA  CHOORNAM 50GM	63
+KACHOORADI CHOORNAM 50GM	40.95
+KALLYANAKSHARAM 250GM	264.6
+KANTAKARI CHOORNAM 500GM	191.1
+KANTAKARI CHOORNAM 50GM	21
+KARPOORADHI CHOORNAM 500GM	452.55
+KARPPURADI CHOORNAM 50GM	47.25
+KOLAKULATHADI CHOORNAM 200GM	80.85
+KOLAKULATHADI CHOORNAM 50GM	22.05
+KOTTAMCHUKKADHI CHOORNAM 200GM	99.75
+KUTAJA CHOORNAM 500GM	191.1
+KUTAJA CHOORNAM 50GM	21
+MARICHA CHOORNAM 500GM	386.4
+MARICHA CHOORNAM 50GM	40.95
+MISI CHOORNAM 500GM	210
+MISI CHOORNAM 50GM	23.1
+MUSTHA CHOORNAM 500GM	129.15
+MUSTHA CHOORNAM 50GM	14.7
+NAGAKESARA CHOORNAM 500GM	210
+NAGAKESARA CHOORNAM 50GM	23.1
+NAGARADHI LEPA  CHOORNAM 200GM	133.35
+NAGARADHI LEPA CHOORNAM 50GM	35.7
+NAVAYASA CHOORNAM 50GM	61.95
+NIMBADI CHOORNAM 500GM	292.95
+NIMBADI CHOORNAM 50GM	30.45
+NISA CHORNAM 500GM	270.9
+NISA CHORNAM 50GM	28.35
+OUSHADHI DHAHASAMANI 50GM	26.25
+OUSHADHI FACE PACK 50GMS	110.25
+OUSHADHI TOOTH POWDER 25GM	28.35
+PANCHAKOLA CHOORNAM 500GM	550.2
+PANCHAKOLADI CHOORNAM 50GM	56.7
+PIPPALI CHORNAM 500GM	918.75
+PIPPALI CHORNAM 50GM	93.45
+PIPPALIMOOLA CHOORNAM 500GM	228.9
+PIPPALIMOOLA CHOORNAM 50GM	24.15
+PRAMEHOUSHADHI 100GM	99.75
+PRAMEHOUSHADHI 200GM	191.1
+PUNARNAVA CHOORNAM 500GM	228.9
+PUNARNAVA CHOORNAM 50GM	24.15
+PURANADHATHRIPHALA CHOORNAM 500GM	133.35
+PURANADHATHRIPHALA CHOORNAM 50GM	14.7
+PUSHYANUGA CHOORNAM 500GM	588
+PUSHYANUGA CHOORNAM 50GM	59.85
+RAJANNYADI CHOORNAM 500GM	370.65
+RAJANNYADI CHOORNAM 50GM	37.8
+RASNADI CHOORNAM 10GM	11.55
+RASNADI CHOORNAM 500GM	345.45
+RASNADI CHOORNAM 50GM	35.7
+SARASWATHA CHOORNAM 500GM	570.15
+SARASWATHA CHOORNAM 50GM	58.8
+SARPAGANADHI CHOORNAM 500GM	749.7
+SARPAGANADHI CHOORNAM 50GM	76.65
+SARPAGANDHYADI CHOORNAM 500GM	749.7
+SARPAGANDHYADI CHOORNAM 50GM	76.65
+SATHAVARI CHOORNAM 500GM	386.4
+SATHAVARI CHOORNAM 50GM	45.15
+SHADDHARNA CHOORNAM 50GM	79.8
+SITHOLPALADI CHOORNAM 500GM	386.4
+SITHOLPALADI CHOORNAM 50GM	40.95
+SOMALATHA CHOORNAM 500GM	465.15
+SOMALATHA CHOORNAM 50GM	48.3
+SUDARSANA CHOORNAM 500GM	279.3
+SUDARSANA CHOORNAM 50GM	29.4
+SUNDI CHOORNAM 500GM	384.3
+SUNDI CHOORNAM 50GM	39.9
+SWETHASANKUPUSPA CHOORNAM 500GM	283.5
+SWETHASANKUPUSPA CHOORNAM 50GM	30.45
+THALEESAPATHRADI CHOORNAM 10GM	11.55
+THALEESAPATHRADI CHOORNAM 500GM	311.85
+THALEESAPATHRADI CHOORNAM 50GM	32.55
+THRIKATU CHOORNAM 500GM	546
+THRIKATU CHOORNAM 50GM	55.65
+THRIVATH CHOORNAM 500GM	190.05
+THRIVATH CHOORNAM 50GM	21
+UNMADANASINI CHOORNAM 500GM	344.4
+UNMADANASINI CHOORNAM 50GM	35.7
+USEERA CHOORNAM 500GM	270.9
+USEERA CHOORNAM 50GM	28.35
+VACHA CHOORNAM 500GM	231
+VACHA CHOORNAM 50GM	24.15
+VAISWANARA CHOORNAM 500GM	307.65
+VAISWANARA CHOORNAM 50GM	32.55
+VARA CHOORNAM 500GM	290.85
+VARA CHOORNAM 50GM	30.45
+VIDANGA CHOORNAM 500GM	473.55
+VIDANGA CHOORNAM 50GM	48.3
+YASHTI CHOORNAM 500GM	242.55
+YASHTI CHOORNAM 50GM	26.25
+YAVANYADI CHOORNAM 500GM	307.65
+YAVANYADI CHOORNAM 50GM	32.55
+YOGARAJA CHOORNAM 500GM	425.25
+YOGARAJA CHOORNAM 50GM	44.1
+BRAHMI GHRUTHAM 200ML	164.85
+BRAHMI GHRUTHAM 450ML	367.5
+BRAHMIKALLYANAKA GRITHAM 200ML	132.3
+BRAHMIKALYANAKA GHRUTHAM 450ML	294
+DADIMADHI GHRUTHAM 200ML	164.85
+DADIMADHI GHRUTHAM 450ML	367.5
+DHANWANTHARA GHRUTHAM 200ML	158.55
+DHANWANTHARA GHRUTHAM 450ML	353.85
+DHATHRYADI GRITHAM 200ML	145.95
+DHATHRYADI GRITHAM 450ML	323.4
+DHATRYADI GHRUTHAM (MUTTON EXTRACT) 450ML	434.7
+DURVA GHRUTHAM 200ML	162.75
+DURVA GHRUTHAM 450ML	363.3
+GULGULUTHIKTAKAM GRITHAM 200ML	217.35
+GULGULUTHIKTAKAM GRITHAM 450ML	485.1
+INDUKANTHA GHRUTHAM 200ML	180.6
+INDUKANTHA GHRUTHAM 450ML	404.25
+JATHYADI GHRUTHAM 200ML	148.05
+JATHYADI GHRUTHAM 450ML	329.7
+JEEVANTHYADI GHRUTHAM 200ML	638.4
+JEEVANTHYADI GHRUTHAM 450ML	1432.2
+KALLYANAKA GHRUTHAM 200ML	148.05
+KALLYANAKA GHRUTHAM 450ML	329.7
+KARASKARA GHRUTHAM 200ML	214.2
+KARASKARA GHRUTHAM 450ML	477.75
+KOOSMANDASWARASA GHRUTHAM 200ML	147
+KOOSMANDASWARASA GHRUTHAM 450ML	327.6
+MAHAKALYANAKA GHRUTHAM 200ML	182.7
+MAHAKALYANAKA GHRUTHAM 450ML	407.4
+MAHALPANCHAGAVYA GHRUTHAM 450ML	395.85
+MAHALPANCHAGAVYA GRITHAM 200ML	177.45
+MAHAPAISACHIKA GHRUTHAM 200ML	139.65
+MAHAPAISACHIKA GHRUTHAM 450ML	310.8
+MAHATHIKTHAKA GHRUTHAM 200ML	154.35
+MAHATHIKTHAKA GHRUTHAM 450ML	343.35
+NEELEE GHRUTHAM 200ML	298.2
+NEELEE GHRUTHAM 450ML	666.75
+NEELEEDALADI GHRUTHAM 200ML	151.2
+NEELEEDALADI GHRUTHAM 450ML	336
+PADADARVADHI GHRUTHAM 200ML	257.25
+PANCHAGAVYA GHRUTHAM 200ML	128.1
+PANCHAGAVYA GHRUTHAM 450ML	284.55
+PATOLADI GHRUTHAM 200ML	148.05
+PATOLADI GHRUTHAM 450ML	329.7
+PHALASARPHIS 200ML	173.25
+PHALASARPHIS 450ML	382.2
+PURANA GHRUTHAM 200ML	110.25
+PURANA GHRUTHAM 450ML	244.65
+RASNADASAMOOLA GHRUTHAM 200ML	154.35
+RASNADASAMOOLA GHRUTHAM 450ML	344.4
+SARASWATHAGHRUTHAM 200ML	138.6
+SARASWATHAGHRUTHAM 450ML	307.65
+SHADPHALA GHRUTHAM 200ML	126
+SHADPHALA GHRUTHAM 450ML	280.35
+SUGHAPRASAVADA GHRUTHAM 200ML	224.7
+SUKUMARA GHRUTHAM 200ML	187.95
+SUKUMARA GHRUTHAM 450ML	417.9
+THIKTHAKA GHRUTHAM 200ML	158.55
+THIKTHAKA GHRUTHAM 450ML	352.8
+THRYPHALA GHRUTHAM 200ML	133.35
+THRYPHALA GHRUTHAM 450ML	297.15
+VAJRAKA GHRUTHAM 200ML	147
+VAJRAKA GHRUTHAM 450ML	327.6
+VIDARYADI GHRUTHAM (MUTTON EXTRACT) 200ML	195.3
+VIDARYADI GHRUTHAM 200ML	148.05
+VIDARYADI GHRUTHAM 450ML	329.7
+ASHTAKSHARI GULIKA 100NO	220.5
+AYUSH GUTTI 60 NO	66.15
+AYUSH-64 TABLET 100NO	275.1
+AYUSH-64 TABLET 40NO	110.25
+BALARASAYANAM TABLET 60 NO	85.05
+CARDOCARE TABLET 100NO	165.9
+CHANDANADIVARTHI GULIKA 100NO	514.5
+CHANDRAPRABHA GULIKA 100NO	161.7
+CHARNGERYADI GULIKA 100NO	257.25
+CHITRAKADI GLIKA 100 NO	204.75
+CHUKKUMTHIPPALLYADI GULIKA 100NO	110.25
+DASANGAM GULIKA 100NO	441
+DHANWANTHARAM GULIKA 100NO	114.45
+DOOSHIVISHAHARI GULIKA 100NO	154.35
+GOKSHURADHI GULGULU 100NO	291.9
+GOPICHANDANADI GULIKA 100NO	161.7
+GOROCHANADI GULIKA 100NO	1319.85
+JATHEEMUKULADIVARTHI GULIKA 100NO	220.5
+KACHOORADIVATTU GULIKA 100NO	224.7
+KAISORAGULGULU GULIKA 100NO	220.5
+KANCHANARA GUGGULU 100NO	183.75
+KARUTHAVATTU GULIKA 100NO	271.95
+KHADIRA GULIKA 100NO	477.75
+KRIMIGHNAVTI GULIKA 100NO	160.65
+LAGHUSUTHASEKHARA RASAM TABLET 100NO	80.85
+LAKSHA GULGGULU GULIKA 100NO	168
+LAVANGADHI GULIKA 100NO	172.2
+LIPOCARE TABLET 100NO	257.25
+MANASAMITHRAVATAKAM GULIKA 100NO	2118.9
+MANASAMITHRAVATAKAM GULIKA 10NO	213.15
+MANDOORAVATAKAM GULIKA 100NO	241.5
+MARMAVATTU GULIKA 100NO	257.25
+MUKKAMUKKADUKADI GULIKA 100NO	113.4
+NAVAYASAM GULIKA 100NO	249.9
+PONKARADI GULIKA 100NO	444.15
+PRABHAKARAVATI TABLET 100 NO	95.55
+PRAMEHOUSHADHI TABLET 100NOS	210
+PUNARNAVA GULGULU 100 NO	183.75
+PUNARNAVA MANDOORAM 100NO	121.8
+PUSHYANUGAM GULIKA 100NO	404.25
+RAJAPRAVARTHINIVADI 100NO	117.6
+SAMSAMANI VATI 100 NO	99.75
+SANJEEVANI VATI 100 NO	55.65
+SAPTHAVIMSHATHIKA GULGULU 100NO	294
+SARVAROGAKULANTHAKAM GULIKA 100NO	183.75
+SHADDHARANAM TABLET 100NOS	220.5
+SIVAGULIKA 10NOS	132.3
+SUDARSHANAM TABLET 100NOS	121.8
+SURYAPRADHA GULIKA 100NO	113.4
+SWASANANDAM GULIKA 100NO	110.25
+THRIPHALA GULGULU 100NO	231
+THRIPHALADI GULIKA 100NO	110.25
+URAMARUNNU GULIKA 100NO	121.8
+VAYU GULIKA 100NO	276.15
+VETTUMARAN GULIKA 100NO	107.1
+VIDANGADI GULIKA 100NO	227.85
+VIGOR PLUS CAPSULE 60NOS	294
+VILWADI GULIKA 100NO	213.15
+VIMALAVARTHI GULIKA 100NO	680.4
+YOGARAJAGULGULU GULIKA 100NO	191.1
+AMRUTHOTHARAM KASHAYAM 200ML	66.15
+ASTAVARGAM (BALASAHACHRADI) 200ML	71.4
+BADRADARVADHI KASHAYAM 200ML	72.45
+BALAGULUCHYADHI KASHAYAM 200ML	65.1
+BALAJEERAKADHI KASHAYAM 200ML	65.1
+BALAMOOLADI KASHAYAM 200ML	59.85
+BHRAHATHYADHI KASHAYAM 200ML	66.15
+CHIRUVILWADI KASHAYAM 200ML	94.5
+DASAMOOLAKADUTRYAMKASHAYA 200ML	79.8
+DHANADANAYANADI KASHAYAM 200ML	93.45
+DHANWANTHARAM KASHAYAM 200ML	90.3
+DRAKSHADHI KASHAYAM 200ML	92.4
+DUSPARSAKADI KASHAYAM 200ML	94.5
+ELAKANADHI KASHAYAM 200ML	80.85
+GANDRAVAHASTADI KASHAYAM 200ML	66.15
+GULGULUTHIKTHAKOMKASHAYAM 200ML	118.65
+GULUCHYADHI KASHAYAM 200ML	102.9
+INDHUKANTHAM KASHAYAM 200ML	70.35
+KATHAKAKADHIRADHIKASHAYAM 200ML	69.3
+KOKILAKSHAM KASHAYAM 200ML	60.9
+MAHAMANJISHTATHI KASHAYAM 200ML	91.35
+MAHARASNADHI KASHAYAM 200ML	110.25
+MAHATHIKTHAKAM KASHAYAM 200ML	121.8
+MANJISTADI KASHAYAM 200ML	99.75
+MUSALIKADHIRADI KASHAYAM 200ML	60.9
+MUSTAKARANJADI KASHAYAM 200ML	85.05
+NAYOPAYAM KASHAYAM 200ML	101.85
+NIMBATHI KASHAYAM 200ML	72.45
+NIRGUNYADHI KASHAYAM 200ML	63
+NISAKATAKADI KASHAYAM 200ML	70.35
+PADOLADHIGANAM KASHAYAM 200ML	136.5
+PANCHATIKTHAKAM KASHAYAM 200ML	87.15
+PATHYADHI KASHAYAM 200ML	73.5
+PATYAKSHADATHRAYADI KASHAYAM 200ML	76.65
+PRASARANYADHI KASHAYAM 200ML	69.3
+PUNARNNAVADHI KASHAYAM 200ML	69.3
+RASNASAPTAKAM KASHAYAM 200ML	72.45
+RASNERANDADI KASHAYAM 200ML	117.6
+RASONATHI KASHAYAM 200ML	109.2
+SAHACHARADI KASHAYAM 200ML	67.2
+SAPTHASARAM KASHAYAM 200ML	77.7
+SUKUMARAM KASHAYAM 200ML	76.65
+THRAYANTHYATHI KASHAYAM 200ML	109.2
+VAJRAKAM KASHAYAM 200ML	72.45
+VARANADHI KASHAYAM 200ML	69.3
+VASAGULUCHYADHI KASHAYAM 200ML	65.1
+VIDARYADHI KASHAYAM 200ML	76.65
+VYOSHADHI KASHAYAM 200ML	75.6
+AMRUTHOTHARAM  KC 1KG	194.25
+AMRUTHOTHARAM  KC 250GM	50.4
+AMRUTHOTHARAM  KC 500GM	98.7
+ARAGWADI KC 1 KG	1057.35
+ARAGWADI KC 100GM	110.25
+ARAGWADI KC 250GM	268.8
+ARAGWADI KC 500GM	533.4
+ASTAVARGAM  KC 500GM	94.5
+BHADRADARVADI  KC 1 KG	200.55
+BHADRADARVADI  KC 250GM	51.45
+BHADRADARVADI  KC 500GM	101.85
+BRAHATHYADI  KC 1KG	161.7
+BRAHATHYADI  KC 250GM	42
+BRAHATHYADI  KC 500GM	81.9
+CHIRUVILWADI  KC 1KG	300.3
+CHIRUVILWADI  KC 250GM	76.65
+CHIRUVILWADI  KC 500GM	152.25
+DASAMOOLAKADUTHRAYAM  KC 1KG	223.65
+DASAMOOLAKADUTHRAYAM  KC 250GM	57.75
+DASAMOOLAKADUTHRAYAM  KC 500GM	113.4
+DASAMOOLAM  KC 1KG	139.65
+DHANWANTHARAM  KC 1KG	197.4
+DHANWANTHARAM  KC 250GM	50.4
+DHANWANTHARAM  KC 500GM	99.75
+DRAKSHADI  KC 1KG	660.45
+DRAKSHADI  KC 250GM	166.95
+DRAKSHADI  KC 500GM	331.8
+ELAKANADI  KC 1KG	410.55
+ELAKANADI  KC 250GM	103.95
+ELAKANADI  KC 500GM	206.85
+GANDHARVAHASTHADI  KC 1KG	200.55
+GANDHARVAHASTHADI  KC 250GM	51.45
+GANDHARVAHASTHADI  KC 500GM	101.85
+GOJIHWADI  KC 100 GM	27.3
+GOJIHWADI  KC 1KG	258.3
+GOJIHWADI  KC 250GM	66.15
+GOJIHWADI  KC 500GM	131.25
+GULGULUTHIKTHAKAM  KC 500GM	145.95
+GULUCHYADI  KC 1KG	180.6
+GULUCHYADI  KC 250GM	47.25
+GULUCHYADI  KC 500GM	92.4
+INDUKANTHAM  KC 100GM	18.9
+INDUKANTHAM  KC 500GM	94.5
+INDUKANTHAM  KC 50GM	10.5
+KAIDARYADI  KC 1KG	239.4
+KAIDARYADI  KC 250GM	61.95
+KAIDARYADI  KC 500GM	121.8
+MAHARASNADI  KC 1KG	271.95
+MAHARASNADI  KC 250GM	70.35
+MAHARASNADI  KC 500GM	137.55
+MANJISHTYADI  KC 1KG	217.35
+MANJISHTYADI  KC 250GM	55.65
+MANJISHTYADI  KC 500GM	110.25
+MRIDWEEKADI  KC 1KG	271.95
+MRIDWEEKADI  KC 250GM	70.35
+MRIDWEEKADI  KC 500GM	137.55
+MUSALIKADIRADI  KC 1KG	164.85
+MUSALIKADIRADI  KC 250GM	43.05
+MUSALIKADIRADI  KC 500GM	84
+MUSTHAKARANCHADI  KC 1KG	239.4
+MUSTHAKARANCHADI  KC 250GM	61.95
+MUSTHAKARANCHADI  KC 500GM	121.8
+NAYOPAYAM  KC 1KG	278.25
+NAYOPAYAM  KC 250GM	71.4
+NAYOPAYAM  KC 500GM	140.7
+NEELIKARANJADI  KC 1KG	607.95
+NEELIKARANJADI  KC 250GM	153.3
+NEELIKARANJADI  KC 500GM	305.55
+NEELIMOOLADI  KC 1KG	511.35
+NEELIMOOLADI  KC 250GM	129.15
+NEELIMOOLADI  KC 500GM	257.25
+NEELITHULASYADI  KC 1KG	359.1
+NEELITHULASYADI  KC 250GM	91.35
+NEELITHULASYADI  KC 500GM	180.6
+NIRGUNYADI  KC 1KG	278.25
+NIRGUNYADI  KC 250GM	71.4
+NIRGUNYADI  KC 500GM	140.7
+NISAKATHAKADI  KC 1KG	200.55
+NISAKATHAKADI  KC 250GM	51.45
+NISAKATHAKADI  KC 500GM	101.85
+PADOLADIGANAM  KC 1KG	999.6
+PADOLADIGANAM  KC 250GM	250.95
+PADOLADIGANAM  KC 500GM	500.85
+PANCHATHIKTHAKAM  KC 1KG	200.55
+PANCHATHIKTHAKAM  KC 250GM	51.45
+PANCHATHIKTHAKAM  KC 500GM	101.85
+PASHANABEDADI  KC 100GM	26.25
+PASHANABEDADI  KC 1KG	250.95
+PASHANABEDADI  KC 500GM	127.05
+PATHYADI  KC 1KG	187.95
+PATHYADI  KC 250GM	48.3
+PATHYADI  KC 500GM	95.55
+PATHYAKSHADHATHRYADI  KC 1KG	139.65
+PATHYAKSHADHATHRYADI  KC 500GM	71.4
+PHALATHRIKADI  KC 100GM	33.6
+PHALATHRIKADI  KC 1KG	315
+PHALATHRIKADI  KC 500GM	159.6
+PRASARANYADI  KC 500GM	121.8
+PUNARNAVADI  KC 1KG	210
+PUNARNAVADI  KC 250GM	54.6
+PUNARNAVADI  KC 500GM	107.1
+RASNASAPTHAKAM  KC 1KG	165.9
+RASNASAPTHAKAM  KC 500GM	85.05
+RASNERANDADI  KC 1KG	252
+RASNERANDADI  KC 250GM	65.1
+RASNERANDADI  KC 500GM	128.1
+SAHACHARADI  KC 1KG	227.85
+SAHACHARADI  KC 500GM	115.5
+SAHACHARADI  KC 50GM	58.8
+SAPTASARAM  KC 1KG	180.6
+SAPTASARAM  KC 250GM	47.25
+SAPTASARAM  KC 500GM	92.4
+SHADANGAM  KC 500GM	249.9
+SHADANGAM  KC 50GM	26.25
+VARANADI  KC 1KG	180.6
+VARANADI  KC 250GM	47.25
+VARANADI  KC 500GM	92.4
+VASAGULUCHYADI  KC 1KG	455.7
+VASAGULUCHYADI  KC 500GM	228.9
+VASAGULUCHYADI  KC 50GM	24.15
+VIDHARYADI  KC 500GM	110.25
+VYAGRATHI KC 1000GM	359.1
+VYAGRATHI KC 250GM	107.1
+VYAGRATHI KC 500GM	194.25
+VYOSHADI  KC 1KG	233.1
+VYOSHADI  KC 250GM	59.85
+VYOSHADI  KC 500GM	118.65
+AMRUTHADHI KSC 500G	117.6
+AMRUTHADHI KSC 50G	13.65
+AMRUTHOTHARM KSC 500G	117.6
+AMRUTHOTHARM KSC 50G	13.65
+BALADHI SC 200G	66.15
+BALADHI SC 50G	26.25
+DASAMOOLAKADUTHRAYAM KSC 500G	174.3
+DASAMOOLAKADUTHRAYAM KSC 50G	18.9
+GANDHARVAHASTHADI KSC 500G	133.35
+GANDHARVAHASTHADI KSC 50G	14.7
+GULUCHYADHI KSC 500G	117.6
+GULUCHYADHI KSC 50G	13.65
+INDUKANTHAM KSC 500G	249.9
+INDUKANTHAM KSC 50G	26.25
+MAHARASNADHI KSC 500G	141.75
+MAHARASNADHI KSC 50G	15.75
+PADOLAMOOLADHI KSC 500G	130.2
+PATHYADHI KSC 500G	158.55
+PATHYADHI KSC 50G	17.85
+PUNARNAVADHI KSC 500G	141.75
+PUNARNAVADHI KSC 50G	15.75
+RASNERANDADHI KSC 500G	133.35
+RASNERANDADHI KSC 50G	14.7
+AGASTHYARASAYANAM 200GM	55.65
+AGASTHYARASAYANAM 500GM	136.5
+AJAMAMSARASAYANAM 400GM	178.5
+AMRITHAPRASAM 200 GM	89.25
+AMRITHAPRASAM 500GM	219.45
+ASWAGHANDHADI LEHYAM 400GM	140.7
+BHRAMARASAYANAM 200 GM	54.6
+BHRAMARASAYANAM 500GM	132.3
+CHAVANAPRASAM CF SPL 250GM	124.95
+CHAVANAPRASAM CF SPL 500GM	242.55
+CHINCAHADI LEHYAM 200GM	94.5
+CHINCAHADI LEHYAM 500GM	232.05
+CHYAVANAPRASAM 200GM	61.95
+CHYAVANAPRASAM 500GM	151.2
+DASAMOOLAHARITHAKI 200GM	52.5
+DASAMOOLAHARITHAKI 500GM	129.15
+DASAMOOLARASAYANAM 100GM	106.05
+DASAMOOLARASAYANAM 25GM	28.35
+DRAKSHADI LEHYAM 200GM	92.4
+DRAKSHADI LEHYAM 500GM	226.8
+ELADIRASAYANAM 50GM	70.35
+GOMOOTHRAHAREETHAKI 200GM	55.65
+GOMOOTHRAHAREETHAKI 500GM	136.5
+HARIDRAGHANDAM 50GM	25.2
+HRIDYAVIRECHANANM 200GM	57.75
+HRIDYAVIRECHANANM 500GM	138.6
+KADHALEERASAYANAM 200GM	183.75
+KADHALEERASAYANAM 500GM	455.7
+KALLYANANGULAM 200GM	48.3
+KALLYANANGULAM 500GM	116.55
+KOOSMANDARASAYANAM 200GM	72.45
+KOOSMANDARASAYANAM 500GM	176.4
+KUDAJA LEHYAM 200GM	66.15
+KUDAJA LEHYAM 500GM	161.7
+MANIBHADRAM LEHYAM 200GM	57.75
+MANIBHADRAM LEHYAM 500GM	138.6
+NARASIMHARASAYANAM 200GM	76.65
+PANJAJEERAKAGUDAM 250GM	91.35
+PULIMKUZHAMBU 100GM	92.4
+SATHAVARIGULAM 200GM	76.65
+SATHAVARIGULAM 500GM	183.75
+SOORANAVA LEHYAM 200GM	66.15
+SOUBAGYASUNDI MODAKAM 100GM	50.4
+SOUBAGYASUNDI MODAKAM 200GM	98.7
+SOUBAGYASUNDI MODAKAM 500GM	242.55
+SUKUMARARASAYANAM 200GM	103.95
+SUKUMARARASAYANAM 500GM	256.2
+THALEESAVADAKAM 200GM	96.6
+THALEESAVADAKAM 500GM	238.35
+THALEESAVADAKAM GRANULES 100GM	45.15
+THARAMANDOORAM 200GM	117.6
+THENGINPOOKULAMRUTHAM 400GM	161.7
+VALIYAMADHUSNUHIRASAYANAM 200GM	81.9
+VALIYAMADHUSNUHIRASAYANAM 500GM	201.6
+VIDARYATHI LEHYAM 200GM	66.15
+VIDARYATHI LEHYAM 500GM	160.65
+VILWADI LEHYAM 200GM	63
+VILWADI LEHYAM 500GM	153.3
+VYOSHADI VADAKAM 50GM	23.1
+BURNCURE OINTMENT 25GM	50.4
+K K LEPAM 25GM	48.3
+MURIVENNA OINTMENT 10GM	26.25
+OUSHADHI BLISS BALM 10GM	33.6
+PSORSET OINTMENT 50GM	66.15
+RHEUMAJITH 10GM	29.4
+ELANEERKUZHAMBU 10ML	42
+ELANEERKUZHAMBU 50ML	201.6
+ASHTACHOORNAM SYRUP 100ML	44.1
+INDHUKANTHAM SYRUP 100ML	28.35
+OUSHADHI COUGH SYRUP 100ML	44.1
+RAJANYADI CHOORNAM SYRUP 100ML	27.3
+AMRUTHATHI THAILAM (BIG) 100ML	76.65
+AMRUTHATHI THAILAM (BIG) 200ML	145.95
+AMRUTHATHI THAILAM (BIG) 450ML	325.5
+AMRUTHATHI THAILAM (SMALL) 100ML	50.4
+AMRUTHATHI THAILAM (SMALL) 200ML	94.5
+AMRUTHATHI THAILAM (SMALL) 450ML	207.9
+ANU THAILAM 10ML	42
+ANU THAILAM 50ML	202.65
+ARIMEDADI DROPS 10ML	36.75
+ARIMEDADI THAILAM 100ML	47.25
+ARIMEDADI THAILAM 200ML	87.15
+ARIMEDADI THAILAM 450ML	194.25
+ARUKALADHI THAILAM 100ML	44.1
+ARUKALADHI THAILAM 100ML	40.95
+ARUKALADHI THAILAM 200ML	80.85
+ARUKALADHI THAILAM 450ML	179.55
+ASANAELADHI CO OIL 100ML	80.85
+ASANAELADHI CO OIL 200ML	154.35
+ASANAELADHI CO OIL 450ML	342.3
+ASANAELADI THAILAM 100ML	54.6
+ASANAELADI THAILAM 200ML	102.9
+ASANAELADI THAILAM 450ML	231
+ASANAMANJISHTADITHAILAM 100ML	49.35
+ASANAMANJISHTADITHAILAM 200ML	91.35
+ASANAMANJISHTADITHAILAM 450ML	205.8
+ASANAVILWADHI CO OIL 100ML	66.15
+ASANAVILWADHI CO OIL 200ML	129.15
+ASANAVILWADHI CO OIL 450ML	286.65
+ASANAVILWADHI THAILAM 100ML	42
+ASANAVILWADHI THAILAM 200ML	77.7
+ASANAVILWADHI THAILAM 450ML	170.1
+BALA THAILAM 10ML	44.1
+BALADHATHRYADI THAILAM 100ML	64.05
+BALADHATHRYADI THAILAM 200ML	121.8
+BALADHATHRYADI THAILAM 450ML	271.95
+BALAGULUCHYADHI CO OIL 100ML	66.15
+BALAGULUCHYADHI CO OIL 200ML	129.15
+BALAGULUCHYADHI CO OIL 450ML	286.65
+BALAGULUCHYADI THAILAM 100ML	42
+BALAGULUCHYADI THAILAM 200ML	77.7
+BALAGULUCHYADI THAILAM 450ML	170.1
+BALAHATADHI THAILAM 100ML	42
+BALAHATADHI THAILAM 200ML	77.7
+BALAHATADHI THAILAM 450ML	170.1
+BALASWANGADHADI THAILAM 100ML	56.7
+BALASWANGADHADI THAILAM 200ML	107.1
+BALASWANGADHADI THAILAM 450ML	237.3
+BRINGAMALAKADI THAILAM 100ML	49.35
+BRINGAMALAKADI THAILAM 200ML	92.4
+BRINGAMALAKADI THAILAM 450ML	205.8
+CHANDANADI THAILAM 100ML	56.7
+CHANDANADI THAILAM 200ML	107.1
+CHANDANADI THAILAM 450ML	236.25
+CHEMPARATHYADHI CO OIL 100ML	46.2
+CHEMPARATHYADHI CO OIL 200ML	132.3
+CHEMPARATHYADHI CO OIL 450ML	290.85
+CHINJADHI THAILAM 100ML	40.95
+CHINJADHI THAILAM 200ML	74.55
+CHINJADHI THAILAM 450ML	165.9
+DHANWANTHARAM 101 TIMES 10ML	87.15
+DHANWANTHARAM 14 TIMES 10ML	33.6
+DHANWANTHARAM 21 TIMES 10ML	40.95
+DHANWANTHARAM 41 TIMES 10ML	51.45
+DHANWANTHARAM 7 TIMES 10ML	26.25
+DHANWANTHARAM KUZHAMBU 100ML	60.9
+DHANWANTHARAM KUZHAMBU 200ML	114.45
+DHANWANTHARAM KUZHAMBU 450ML	254.1
+DHANWANTHARAM THAILAM (MEZHUKUPAKAM) 200 ML	109.2
+DHANWANTHARAM THAILAM (MEZHUKUPAKAM) 450 ML	242.55
+DHANWANTHARAM THAILAM 100ML	57.75
+DHANWANTHARAM THAILAM 200ML	109.2
+DHANWANTHARAM THAILAM 450ML	242.55
+DINESELADI CO OIL 100ML	52.5
+DINESELADI CO OIL 200ML	147
+DINESELADI CO OIL 450ML	323.4
+DURDHURAPATHRADHI CO OIL 100ML	55.65
+DURDHURAPATHRADHI CO OIL 200ML	158.55
+DURDHURAPATHRADHI CO OIL 450ML	352.8
+ELADI CO OIL 100ML	74.55
+ELADI CO OIL 200ML	151.2
+ELADI CO OIL 450ML	330.75
+ELADI THAILAM 100ML	66.15
+ELADI THAILAM 200ML	126
+ELADI THAILAM 450ML	279.3
+ERANDA THAILAM 450 ML	191.1
+GANDHA TAILAM 10ML	54.6
+GANDHARVAHASTHADI THAILAM 450ML	263.55
+GANDHARVAHASTHADI THAILAM 50ML	30.45
+GOPADMAJADI CO OIL 100ML	58.8
+GOPADMAJADI CO OIL 200ML	171.15
+GOPADMAJADI CO OIL 450ML	379.05
+GULGULUMARIJADI THAILAM 500ML	302.4
+GULGULUMARIJADI THAILAM 50ML	32.55
+HINGUTHRIGUNAM 500ML	403.2
+HINGUTHRIGUNAM 50ML	42
+JATHYADI CO OIL 100ML	70.35
+JATHYADI CO OIL 200ML	132.3
+JATHYADI CO OIL 450ML	290.85
+JEEVANTHYADHIYAMAKAM 50ML	44.1
+KANJUNNYADI CO OIL 100ML	49.35
+KANJUNNYADI CO OIL 200ML	147
+KANJUNNYADI CO OIL 450ML	323.4
+KANJUNNYADI THAILAM 100ML	48.3
+KANJUNNYADI THAILAM 200ML	89.25
+KANJUNNYADI THAILAM 450ML	197.4
+KARAPPAN THAILAM 100ML	49.35
+KARAPPAN THAILAM 200ML	149.1
+KARAPPAN THAILAM 450ML	327.6
+KARNAPOORANA THAILAM 450ML	271.95
+KARNAPOORANA THAILAM 50ML	31.5
+KARPASASTHYADHI KUZAMBU 100ML	48.3
+KARPASASTHYADHI KUZAMBU 200ML	89.25
+KARPASASTHYADHI KUZAMBU 450ML	197.4
+KARPOORADHI THAILAM 100ML	72.45
+KARPOORADHI THAILAM 200ML	140.7
+KARPOORADHI THAILAM 450ML	309.75
+KARPPASASTHYADI THAILAM 100ML	46.2
+KARPPASASTHYADI THAILAM 200ML	85.05
+KARPPASASTHYADI THAILAM 450ML	186.9
+KASISADI THAILAM 100ML	44.1
+KASISADI THAILAM 450ML	183.75
+KOTTAMCHUKKADI KUZHAMBU 100ML	46.2
+KOTTAMCHUKKADI KUZHAMBU 200ML	86.1
+KOTTAMCHUKKADI KUZHAMBU 450ML	190.05
+KOTTAMCHUKKADI THAILAM 100ML	45.15
+KOTTAMCHUKKADI THAILAM 200ML	82.95
+KOTTAMCHUKKADI THAILAM 450ML	182.7
+KSHEERABALA 101 TIMES 10ML	72.45
+KSHEERABALA 14 TIMES 10ML	35.7
+KSHEERABALA 21 TIMES 10ML	43.05
+KSHEERABALA 41 TIMES 10ML	50.4
+KSHEERABALA 7 TIMES 10ML	28.35
+KSHEERABALA THAILAM 100ML	51.45
+KSHEERABALA THAILAM 200ML	95.55
+KSHEERABALA THAILAM 450ML	212.1
+KURUNTHOTTI ENNA 100ML	54.6
+KURUNTHOTTI ENNA 200ML	101.85
+KURUNTHOTTI ENNA 450ML	224.7
+LAGHUVISHAGARBHA THAILAM 100ML	42
+LAGHUVISHAGARBHA THAILAM 450ML	176.4
+LAKSHADHI CO OIL 100ML	49.35
+LAKSHADHI CO OIL 200ML	143.85
+LAKSHADHI CO OIL 450ML	320.25
+LAKSHADHI KUZHAMBU 100ML	48.3
+LAKSHADHI KUZHAMBU 200ML	89.25
+LAKSHADHI KUZHAMBU 450ML	199.5
+LAKSHADI THAILAM 100ML	53.55
+LAKSHADI THAILAM 200ML	99.75
+LAKSHADI THAILAM 450ML	220.5
+LAKSHMIVILASA THAILAM 200ML	89.25
+LAKSHMIVILASA THAILAM 450ML	196.35
+MADHUYASHTYADI THAILAM 100ML	68.25
+MADHUYASHTYADI THAILAM 200ML	130.2
+MADHUYASHTYADI THAILAM 450ML	289.8
+MAHACHANDANADI THAILAM 100ML	93.45
+MAHACHANDANADI THAILAM 200ML	180.6
+MAHACHANDANADI THAILAM 450ML	404.25
+MAHAMASHA THAILAM 100ML	76.65
+MAHAMASHA THAILAM 200ML	147
+MAHAMASHA THAILAM 450ML	327.6
+MAHANARAYANA THAILAM 100ML	71.4
+MAHANARAYANA THAILAM 200ML	135.45
+MAHANARAYANA THAILAM 450ML	301.35
+MALATHYADHI KERAM 100ML	53.55
+MALATHYADHI KERAM 200ML	147
+MALATHYADHI KERAM 450ML	342.3
+MARICHADHI THAILAM 100ML	63
+MARICHADHI THAILAM 200ML	117.6
+MARICHADHI THAILAM 450ML	257.25
+MURIVENNA 100ML	80.85
+MURIVENNA 200ML	139.65
+MURIVENNA 450ML	294
+NAGARADI THAILAM 100ML	86.1
+NAGARADI THAILAM 200ML	165.9
+NAGARADI THAILAM 450ML	371.7
+NALPAMARADI KERAM 100ML	73.5
+NALPAMARADI KERAM 200ML	139.65
+NALPAMARADI KERAM 450ML	290.85
+NARAYANA THAILAM 100ML	75.6
+NARAYANA THAILAM 200ML	143.85
+NARAYANA THAILAM 450ML	320.25
+NEELI THAILAM 100ML	49.35
+NEELI THAILAM 200ML	156.45
+NEELI THAILAM 450ML	342.3
+NEELIBRINGADI CO OIL 100ML	102.9
+NEELIBRINGADI CO OIL 200ML	195.3
+NEELIBRINGADI CO OIL 450ML	404.25
+NEELIBRINGADI THAILAM 100ML	67.2
+NEELIBRINGADI THAILAM 200ML	127.05
+NEELIBRINGADI THAILAM 450ML	283.5
+NEELOLPALADI THAILAM 200ML	67.2
+NEELOLPALADI THAILAM 450ML	147
+OUSHADHI BABY OIL 100ML	102.9
+OUSHADHI HAIR TONE 100ML	143.85
+OUSHADHI HAIR TONE 200ML	279.3
+OUSHADHI SANITIZER 100 ML	35.7
+OUSHADHI SANITIZER 200ML	67.2
+OUSHADHI SANITIZER 50ML	18.9
+PANCHAMLA THAILAM 100ML	51.45
+PANCHAMLA THAILAM 200ML	96.6
+PANCHAMLA THAILAM 450ML	214.2
+PARANTHYADI THAILAM 100ML	56.7
+PARANTHYADI THAILAM 200ML	338.1
+PARANTHYADI THAILAM 450ML	757.05
+PARINATHAKERIKSHERATHAILAM 100ML	53.55
+PARINATHAKERIKSHERATHAILAM 200ML	99.75
+PARINATHAKERIKSHERATHAILAM 450ML	221.55
+PINDA THAILAM 100ML	44.1
+PINDA THAILAM 200ML	81.9
+PINDA THAILAM 450ML	180.6
+PIPPALLYADHYANUVASANAM THAILAM 100ML	49.35
+PIPPALLYADHYANUVASANAM THAILAM 200ML	92.4
+PIPPALLYADHYANUVASANAM THAILAM 450ML	205.8
+PRABHANJANAVIMARDHANAM 100ML	51.45
+PRABHANJANAVIMARDHANAM 200ML	96.6
+PRABHANJANAVIMARDHANAM 450ML	214.2
+PRASARANI THAILAM (SMALL) 100ML	51.45
+PRASARANI THAILAM (SMALL) 200ML	96.6
+PRASARANI THAILAM (SMALL) 450ML	214.2
+PRASARANY THAILAM (BIG) 100ML	84
+PRASARANY THAILAM (BIG) 200ML	161.7
+PRASARANY THAILAM (BIG) 450ML	360.15
+PSORSET OIL 100ML	117.6
+RASNADI THAILAM 100ML	44.1
+RASNADI THAILAM 200ML	81.9
+RASNADI THAILAM 450ML	180.6
+RASOTHAMADI LEPAM 500GM	507.15
+RASOTHAMADI LEPAM 50GM	51.45
+SAHACHARADI KUZHAMBU 100ML	56.7
+SAHACHARADI KUZHAMBU 200ML	106.05
+SAHACHARADI KUZHAMBU 450ML	235.2
+SAHACHARADI THAILAM (MEZHUKUPAKAM) 100ML	56.7
+SAHACHARADI THAILAM (MEZHUKUPAKAM) 200ML	106.05
+SAHACHARADI THAILAM (MEZHUKUPAKAM) 450ML	235.2
+SAHACHARADI THAILAM 100ML	56.7
+SAHACHARADI THAILAM 200ML	106.05
+SAHACHARADI THAILAM 450ML	235.2
+SANGUPUSHPADI OIL 100ML	47.25
+SANGUPUSHPADI OIL 200ML	88.2
+SANGUPUSHPADI OIL 450ML	195.3
+SARC SPECIAL THAILAM 50ML	85.05
+SATHAHWADI KUZHAMBU 100ML	34.65
+SATHAHWADI KUZHAMBU 200ML	63
+SATHAHWADI KUZHAMBU 450ML	138.6
+SEETHAMSU THAILAM 100ML	36.75
+SEETHAMSU THAILAM 200ML	66.15
+SEETHAMSU THAILAM 450ML	145.95
+SUDHABALA THAILAM 100ML	44.1
+SUDHABALA THAILAM 200ML	81.9
+SUDHABALA THAILAM 450ML	181.65
+SUDHADURVADI CO OIL 100ML	80.85
+SUDHADURVADI CO OIL 200ML	187.95
+SUDHADURVADI CO OIL 450ML	415.8
+SURASADI THAILAM 100ML	56.7
+SURASADI THAILAM 200ML	147
+SURASADI THAILAM 450ML	323.4
+THEKARAJA THAILAM 100ML	56.7
+THEKARAJA THAILAM 200ML	107.1
+THEKARAJA THAILAM 450ML	239.4
+THENGINPUSHPADHI THAILAM 200ML	111.3
+THENGINPUSHPADHI THAILAM 450ML	246.75
+THRIBALADHI CO OIL 100ML	80.85
+THRIPHALADI CO OIL 200ML	147
+THRIPHALADI CO OIL 450ML	323.4
+THRIPHALADI THAILAM 450ML	205.8
+TRIPHALADI THAILAM 100ML	49.35
+TRIPHALADI THAILAM 200ML	92.4
+VACHADHI THAILAM 200ML	89.25
+VACHADHI THAILAM 450ML	197.4
+VACHALASUNADI THAILAM 100ML	58.8
+VACHALASUNADI THAILAM 200ML	111.3
+VACHALASUNADI THAILAM 450ML	246.75
+VAJRAKA THAILAM 100ML	48.3
+VAJRAKA THAILAM 200ML	89.25
+VAJRAKA THAILAM 450ML	197.4
+VATHAMARDDHANAM KUZHAMBU 100ML	37.8
+VATHAMARDDHANAM KUZHAMBU 200ML	173.25
+VATHAMARDDHANAM KUZHAMBU 450ML	381.15
+VATHAVIDHWAMSANI THAILAM 100ML	44.1
+VATHAVIDHWAMSANI THAILAM 200ML	80.85
+VATHAVIDHWAMSANI THAILAM 450ML	179.55
+VILLYAMPACHOTTYADI THAILAM 100ML	106.05
+VILLYAMPACHOTTYADI THAILAM 200ML	92.4
+VILLYAMPACHOTTYADI THAILAM 450ML	205.8
+`;
+
+function loadMedicines() {
+    const tbody = document.getElementById('product-body');
+    const lines = rawData.trim().split('\n');
+    let htmlBuffer = ""; 
+    
+    lines.forEach((line, index) => {
+        if (!line.trim()) return;
+        const parts = line.trim().match(/(.+)\s+(\d+\.?\d*)$/);
+        if (!parts) return;
+        
+        const name = parts[1].trim();
+        const rate = parseFloat(parts[2]);
+        
+        // ഇവിടെ class="med-row" എന്നത് ഫിൽട്ടർ ചെയ്യാൻ അത്യാവശ്യമാണ്
+        htmlBuffer += `<tr class="med-row">
+            <td>${index + 1}</td>
+            <td class="med-name">${name}</td>
+            <td style="text-align: center;">
+               <input type="number" class="qty-input" placeholder="Qty" min="0" oninput="updateRow(this); saveDraft()">
+            </td>
+            <td style="text-align: right;">${rate.toFixed(2)}</td>
+            <td class="row-cost" style="text-align: right; font-weight: bold;">0.00</td>
+        </tr>`;
+    });
+    tbody.innerHTML = htmlBuffer;
+}
+
+function updateRow(input) {
+    const row = input.closest('tr');
+    // ഇൻപുട്ട് ശൂന്യമാണെങ്കിൽ 0 ആയി കണക്കാക്കാൻ || 0 ചേർത്തു
+    const qty = parseFloat(input.value) || 0;
+    const rate = parseFloat(row.cells[3].innerText);
+    const costField = row.querySelector('.row-cost');
+    
+    costField.innerText = (qty * rate).toFixed(2);
+    
+    if (qty > 0) {
+        row.classList.add('row-active');
+    } else {
+        row.classList.remove('row-active');
+    }
+    calculateAll();
+}
+
+    function calculateAll() {
+        let total = 0;
+        const costs = document.querySelectorAll('.row-cost');
+        costs.forEach(cell => {
+            total += parseFloat(cell.innerText) || 0;
+        });
+
+        const budget = parseFloat(document.getElementById('total-budget').value) || 0;
+        const balance = budget - total;
+
+        document.getElementById('display-total').innerText = total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        const balanceDisplay = document.getElementById('display-balance');
+        balanceDisplay.innerText = balance.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        
+        balanceDisplay.parentElement.style.backgroundColor = balance < 0 ? "#c0392b" : "#2980b9";
+    }
+
+let searchTimeout;
+
+// 2. സെർച്ച് ഫംഗ്ഷൻ - കാറ്റഗറിക്കുള്ളിൽ മാത്രം തിരയുന്നു
+function filterMedicines() {
+    const input = document.getElementById('medicineSearch').value.toLowerCase().trim();
+    const rows = document.getElementById("product-body").getElementsByClassName("med-row");
+
+    window.requestAnimationFrame(() => {
+        for (let i = 0; i < rows.length; i++) {
+            const slNo = parseInt(rows[i].cells[0].textContent);
+            const name = rows[i].cells[1].textContent.toLowerCase();
+            
+            // കണ്ടീഷൻ: കാറ്റഗറി പരിധിയിൽ ആയിരിക്കണം + പേരിൽ തിരയുന്ന അക്ഷരങ്ങൾ വേണം
+            if (slNo >= currentMin && slNo <= currentMax && name.includes(input)) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    });
+}
+
+
+
+// ഡാറ്റ എടുക്കാനുള്ള കോമൺ ഫംഗ്ഷൻ
+
+function getSelectedItems() {
+    const items = [];
+    document.querySelectorAll('#product-body tr').forEach((row, index) => {
+        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+        const cost = parseFloat(row.querySelector('.row-cost').innerText) || 0;
+        const slNo = parseInt(row.cells[0].innerText); // SL Number അടിസ്ഥാനമാക്കി
+
+        if (qty > 0) {
+            items.push({
+                sl: slNo,
+                name: row.cells[1].innerText,
+                qty: qty,
+                rate: row.cells[3].innerText,
+                cost: cost.toFixed(2)
+            });
+        }
+    });
+    return items;
+}
+
+// 1. രണ്ടായി വിഭജിച്ച് ഡൗൺലോഡ് ചെയ്യാൻ (SPLIT PDF)
+async function downloadSplitPDF() {
+    const allData = getSelectedItems();
+    if (allData.length === 0) return alert("ദയവായി മരുന്നുകൾ തിരഞ്ഞെടുക്കുക!");
+
+    // തുകകൾ കണക്കാക്കുന്നു
+    let totalKC = 0;
+    let totalPrep = 0;
+    allData.forEach(item => {
+        const cost = parseFloat(item.cost) || 0;
+        if (item.sl >= 418 && item.sl <= 567) {
+            totalKC += cost;
+        } else {
+            totalPrep += cost;
+        }
+    });
+
+    const summaryText = `KC+KSC Rs. ${totalKC.toFixed(2)} + Prepared Rs. ${totalPrep.toFixed(2)} = ${(totalKC + totalPrep).toFixed(2)}`;
+
+    // സ്പ്ലിറ്റിംഗ് ലോജിക്
+    const groupKC = allData.filter(item => item.sl >= 418 && item.sl <= 567);
+    const groupPrepared = allData.filter(item => item.sl < 418 || item.sl > 567);
+
+    if (groupKC.length > 0) {
+        createSinglePDF(groupKC, "Kashaya Choornam (KC+KSC)", "Indent_KC_KSC", summaryText);
+    }
+    if (groupPrepared.length > 0) {
+        // ചെറിയൊരു ഗ്യാപ്പിന് ശേഷം അടുത്തത് ഡൗൺലോഡ് ചെയ്യുന്നു
+        setTimeout(() => {
+            createSinglePDF(groupPrepared, "Prepared Medicines", "Indent_Prepared", summaryText);
+        }, 500);
+    }
+}
+
+// 2. ഒറ്റ PDF ആയി ഡൗൺലോഡ് ചെയ്യാൻ (COMBINED PDF)
+function downloadCombinedPDF() {
+    const allData = getSelectedItems();
+    if (allData.length === 0) return alert("ദയവായി മരുന്നുകൾ തിരഞ്ഞെടുക്കുക!");
+    
+    // ഇവിടെ summaryText അയക്കുന്നില്ല (null നൽകുന്നു)
+    createSinglePDF(allData, "Medicine Indent (Full List)", "Full_Indent", null);
+}
+
+// --- PDF നിർമ്മിക്കുന്ന കോമൺ ഫംഗ്ഷൻ ---
+// നാലാമത്തെ പാരാമീറ്റർ 'summaryText' ചേർത്തു
+function createSinglePDF(dataArray, subTitle, fileName, summaryText) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const inst = document.getElementById("inst-details").value || "N/A";
+    const type = document.getElementById("indent-type").value || "INDENT";
+    const budget = document.getElementById("total-budget").value || "0.00";
+
+    const tableRows = dataArray.map((item, index) => [index + 1, item.name, item.qty, item.rate, item.cost]);
+
+    // Header
+    doc.setFillColor(44, 62, 80);
+    doc.rect(0, 0, 210, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text(`${type.toUpperCase()} MEDICINE INDENT`, 105, 12, { align: "center" });
+    doc.setFontSize(11);
+    doc.text(subTitle, 105, 19, { align: "center" });
+
+    // Details
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Institution Details:", 14, 35);
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(inst, 100), 14, 40);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Budget: Rs. ${budget}`, 140, 35);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 140, 41);
+
+    // Table
+    doc.autoTable({
+        head: [['SL', 'Medicine Name', 'Qty', 'Rate', 'Cost (Rs)']],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80], halign: 'center' },
+        columnStyles: { 0: {halign:'center'}, 2: {halign:'center'}, 3: {halign:'right'}, 4: {halign:'right'} },
+        styles: { fontSize: 9 }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 10;
+    let total = dataArray.reduce((sum, item) => sum + parseFloat(item.cost), 0);
+
+    // സബ് ടോട്ടൽ/ടോട്ടൽ കാണിക്കുന്നു
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(`TOTAL AMOUNT: Rs. ${total.toFixed(2)}`, 196, finalY, { align: "right" });
+
+    // **പ്രധാന മാറ്റം ഇവിടെയാണ്**
+    // Split PDF ആണെങ്കിൽ മാത്രം summaryText പ്രിന്റ് ചെയ്യും
+    if (summaryText) {
+        finalY += 7;
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(summaryText, 196, finalY, { align: "right" });
+    }
+
+    // ബജറ്റ് നോട്ട്
+    finalY += 7;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text(`* This indent is prepared for the budget of Rs. ${budget}`, 196, finalY, { align: "right" });
+
+    doc.save(`${fileName}.pdf`);
+}
+
+function toggleView() {
+    const viewBtn = document.getElementById("view-btn");
+    const rows = document.querySelectorAll("#product-body tr");
+    
+    // നിലവിൽ കാണിക്കുന്നത് "Show Selected" ആണോ എന്ന് നോക്കുന്നു
+    const showingAll = viewBtn.innerText.includes("SHOW SELECTED");
+
+    rows.forEach(row => {
+        const qtyInput = row.querySelector(".qty-input");
+        const qty = parseFloat(qtyInput.value) || 0;
+
+        if (showingAll) {
+            // Selected മാത്രം കാണിക്കുന്നു
+            if (qty > 0) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        } else {
+            // എല്ലാം കാണിക്കുന്നു
+            row.style.display = "";
+        }
+    });
+
+    // ബട്ടണിലെ പേര് മാറ്റുന്നു
+    if (showingAll) {
+        viewBtn.innerText = "SHOW ALL";
+        viewBtn.style.backgroundColor = "#2ecc71"; // ഗ്രീൻ കളറിലേക്ക് മാറ്റാം
+    } else {
+        viewBtn.innerText = "SHOW SELECTED";
+        viewBtn.style.backgroundColor = "#f39c12"; // പഴയ ഓറഞ്ച് കളറിലേക്ക്
+    }
+}
+
+function showError(message) {
+    const errorBox = document.getElementById("error-message");
+    errorBox.innerText = message;
+    
+    // പെട്ടെന്ന് ശ്രദ്ധിക്കാൻ ഒരു ഷേക്ക് എഫക്റ്റ് (ഓപ്ഷണൽ)
+    errorBox.style.display = "block";
+    
+    // 4 സെക്കൻഡ് കഴിഞ്ഞ് മെസ്സേജ് മാഞ്ഞുപോകും
+    setTimeout(() => {
+        errorBox.innerText = "";
+    }, 4000);
+}
+
+// ക്വാണ്ടിറ്റി മാറ്റുമ്പോൾ സേവ് ചെയ്യാനുള്ള ഫംഗ്ഷൻ
+// 1. ഓരോ തവണ ക്വാണ്ടിറ്റി മാറ്റുമ്പോഴും തനിയെ സേവ് ചെയ്യാൻ
+// 1. ഡാറ്റ തത്സമയം സേവ് ചെയ്യാൻ
+function saveDraft() {
+    const draftData = {};
+    const inputs = document.querySelectorAll('.qty-input');
+    
+    inputs.forEach((input, index) => {
+        if (input.value && parseFloat(input.value) > 0) {
+            draftData[index] = input.value;
+        }
+    });
+    
+    const info = {
+        details: document.getElementById("inst-details").value,
+        budget: document.getElementById("total-budget").value,
+        type: document.getElementById("indent-type").value
+    };
+
+    localStorage.setItem('rubun_draft', JSON.stringify(draftData));
+    localStorage.setItem('rubun_info', JSON.stringify(info));
+}
+
+window.onload = function() {
+    // 1. മെഡിക്കൽ ലിസ്റ്റ് ലോഡ് ചെയ്യുന്നു (നിങ്ങളുടെ ഫംഗ്ഷൻ ഉണ്ടെങ്കിൽ)
+    if (typeof loadMedicines === "function") {
+        loadMedicines();
+    }
+
+    // 2. പുതിയ ഫയൽ മാനേജ്‌മെന്റ് ഡ്രോപ്പ്ഡൗൺ പുതുക്കുന്നു
+    if (typeof updateIndentDropdown === "function") {
+        updateIndentDropdown();
+    }
+
+    // 3. പഴയ ഡ്രാഫ്റ്റ് ലോഡ് ചെയ്യാനുള്ള സംവിധാനം (ഇത് നിലനിർത്താം)
+    const savedDraft = localStorage.getItem('rubun_draft');
+    const savedInfo = localStorage.getItem('rubun_info');
+
+    if (savedInfo) {
+        const info = JSON.parse(savedInfo);
+        document.getElementById("inst-details").value = info.details || "";
+        document.getElementById("total-budget").value = info.budget || "";
+        document.getElementById("indent-type").value = info.type || "";
+    }
+
+    if (savedDraft) {
+        const draftData = JSON.parse(savedDraft);
+        const inputs = document.querySelectorAll('.qty-input');
+        
+        Object.keys(draftData).forEach(index => {
+            if (inputs[index]) {
+                inputs[index].value = draftData[index];
+                const row = inputs[index].closest('tr');
+                const rate = parseFloat(row.cells[3].innerText);
+                const costField = row.querySelector('.row-cost');
+                const qty = parseFloat(draftData[index]) || 0;
+                costField.innerText = (qty * rate).toFixed(2);
+                if (qty > 0) row.classList.add('row-active');
+            }
+        });
+        // നിങ്ങളുടെ പഴയ കാൽക്കുലേഷൻ ഫംഗ്ഷൻ
+        if (typeof calculateAll === "function") {
+            calculateAll();
+        }
+    }
+};
+
+// 3. റീസെറ്റ് ബട്ടൺ പരിഹരിച്ചത്
+function resetForm() {
+    if (confirm("നിങ്ങൾ ഉറപ്പായും ഈ ഇൻഡന്റ് പൂർണ്ണമായും ഒഴിവാക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?")) {
+        // 1. താൽക്കാലിക ഡ്രാഫ്റ്റുകൾ മാത്രം ഒഴിവാക്കുന്നു
+        localStorage.removeItem('rubun_draft');
+        localStorage.removeItem('rubun_info');
+        
+        // 2. സ്ക്രീനിലെ ഇൻപുട്ടുകൾ ക്ലിയർ ചെയ്യുന്നു
+        document.getElementById("inst-details").value = "";
+        document.getElementById("total-budget").value = "";
+        document.getElementById("indent-type").value = "";
+        
+        // പുതിയ ബോക്സുകൾ ഉണ്ടെങ്കിൽ അവയും ക്ലിയർ ചെയ്യുന്നു
+        if(document.getElementById("newIndentName")) document.getElementById("newIndentName").value = "";
+        if(document.getElementById("savedIndentsList")) document.getElementById("savedIndentsList").value = "";
+
+        document.querySelectorAll('.qty-input').forEach(input => input.value = "");
+        document.querySelectorAll('.row-cost').forEach(td => td.innerText = "0.00");
+        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('row-active'));
+        
+        // 3. കാൽക്കുലേഷൻ പുതുക്കുന്നു
+        if (typeof calculateAll === "function") {
+            calculateAll();
+        }
+
+        alert("വിവരങ്ങൾ ക്ലിയർ ചെയ്തിരിക്കുന്നു.");
+        location.reload(); 
+    }
+}
+
+// 3. റേറ്റ് ഫിൽട്ടർ - കാറ്റഗറിക്കുള്ളിൽ മാത്രം റേറ്റ് നോക്കുന്നു
+function filterByRate() {
+    const rangeInput = document.getElementById('rateRange').value.trim();
+    const rows = document.getElementById("product-body").getElementsByClassName("med-row");
+
+    // ഇൻപുട്ട് ഇല്ലെങ്കിൽ കാറ്റഗറിയിലുള്ള എല്ലാവരെയും കാണിക്കും
+    if (!rangeInput) {
+        for (let row of rows) {
+            const slNo = parseInt(row.cells[0].textContent);
+            row.style.display = (slNo >= currentMin && slNo <= currentMax) ? "" : "none";
+        }
+        return;
+    }
+
+    const [minRate, maxRate] = rangeInput.split('-').map(Number);
+    if (isNaN(minRate) || isNaN(maxRate)) {
+        alert("Please enter a valid range (Example: 40-50)");
+        return;
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+        const slNo = parseInt(rows[i].cells[0].textContent);
+        const rate = parseFloat(rows[i].cells[3].textContent);
+
+        // കണ്ടീഷൻ: കാറ്റഗറി പരിധിയിൽ ആയിരിക്കണം + റേറ്റ് പരിധിയിൽ ആയിരിക്കണം
+        if (slNo >= currentMin && slNo <= currentMax && rate >= minRate && rate <= maxRate) {
+            rows[i].style.display = "";
+            rows[i].style.backgroundColor = "#fff9c4";
+        } else {
+            rows[i].style.display = "none";
+        }
+    }
+
+    setTimeout(() => {
+        for (let row of rows) {
+            if (!row.classList.contains('row-active')) row.style.backgroundColor = "";
+        }
+    }, 4000);
+}
+// ഡ്രോപ്പ്ഡൗൺ ലിസ്റ്റ് പുതുക്കാൻ
+function updateIndentDropdown() {
+    const dropdown = document.getElementById("savedIndentsList");
+    dropdown.innerHTML = '<option value="">-- Select a saved indent --</option>';
+    
+    // localStorage-ൽ ഉള്ള എല്ലാ കീകളും പരിശോധിക്കുന്നു
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("IND_")) { // നമ്മുടെ ഇൻഡന്റുകളെ തിരിച്ചറിയാൻ ഒരു പ്രിഫിക്സ്
+            const option = document.createElement("option");
+            option.value = key;
+            option.text = key.replace("IND_", ""); // കാണിക്കുമ്പോൾ ഭംഗിക്കായി പ്രിഫിക്സ് മാറ്റുന്നു
+            dropdown.add(option);
+        }
+    }
+}
+
+// പുതിയ പേരിൽ സേവ് ചെയ്യാൻ
+function saveNewIndent() {
+    const name = document.getElementById("newIndentName").value.trim();
+    if (!name) {
+        alert("ദയവായി ഒരു പേര് നൽകുക!");
+        return;
+    }
+
+    const key = "IND_" + name;
+    const data = {};
+    document.querySelectorAll('.qty-input').forEach((input, index) => {
+        if (parseFloat(input.value) > 0) {
+            data[index] = input.value;
+        }
+    });
+
+    // എല്ലാ വിവരങ്ങളും ഇവിടെ ഒന്നിച്ച് ചേർക്കുന്നു
+    const fullData = {
+        inst: document.getElementById("inst-details").value,
+        budget: document.getElementById("total-budget").value,
+        type: document.getElementById("indent-type").value, // ഈ വരി ഉണ്ടെന്ന് ഉറപ്പാക്കുക
+        quantities: data
+    };
+
+    localStorage.setItem(key, JSON.stringify(fullData));
+    
+    if (typeof updateIndentDropdown === "function") updateIndentDropdown();
+    
+    document.getElementById("newIndentName").value = "";
+    alert("ഇൻഡന്റ് '" + name + "' എന്ന പേരിൽ സേവ് ചെയ്തിരിക്കുന്നു.");
+}
+
+// സെലക്ട് ചെയ്ത ഇൻഡന്റ് ലോഡ് ചെയ്യാൻ
+function loadSelectedIndent() {
+    const key = document.getElementById("savedIndentsList").value;
+    if (!key) {
+        alert("ദയവായി ഒരു ഇൻഡന്റ് സെലക്ട് ചെയ്യുക!");
+        return;
+    }
+
+    const savedData = JSON.parse(localStorage.getItem(key));
+    
+    // ഡാറ്റ തിരികെ ബോക്സുകളിലേക്ക് നൽകുന്നു
+    document.getElementById("inst-details").value = savedData.inst || "";
+    document.getElementById("total-budget").value = savedData.budget || "";
+    document.getElementById("indent-type").value = savedData.type || ""; // ടൈപ്പ് ഇവിടെ ലോഡ് ആകുന്നു
+    
+    // പഴയ ക്വാണ്ടിറ്റികൾ ക്ലിയർ ചെയ്യുന്നു
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.value = "";
+        input.closest('tr').classList.remove('row-active');
+        input.closest('tr').cells[4].innerText = "0.00";
+    });
+
+    // പുതിയ ക്വാണ്ടിറ്റികൾ ഫിൽ ചെയ്യുന്നു
+    for (let index in savedData.quantities) {
+        const row = document.querySelectorAll('#product-body tr')[index];
+        if (row) {
+            const input = row.querySelector('.qty-input');
+            input.value = savedData.quantities[index];
+            if (typeof updateRow === "function") updateRow(input);
+        }
+    }
+    
+    if (typeof calculateAll === "function") calculateAll();
+    alert("വിവരങ്ങൾ ലോഡ് ചെയ്തിരിക്കുന്നു.");
+}
+
+// ഡിലീറ്റ് ചെയ്യാൻ
+function deleteSelectedIndent() {
+    const key = document.getElementById("savedIndentsList").value;
+    if (!key) return;
+
+    if (confirm("ഈ ഇൻഡന്റ് സ്ഥിരമായി ഡിലീറ്റ് ചെയ്യണോ?")) {
+        localStorage.removeItem(key);
+        updateIndentDropdown();
+        alert("ഡിലീറ്റ് ചെയ്തു.");
+    }
+}
+
+// കാറ്റഗറി പരിധി ഓർത്തിരിക്കാൻ രണ്ട് വേരിയബിളുകൾ
+let currentMin = 0;
+let currentMax = 9999;
+
+// 1. ഫിൽട്ടർ ബൈ കാറ്റഗറി - ഇത് ആദ്യം റൺ ചെയ്യുന്നു
+function filterByCategory(min, max, catName) {
+    currentMin = min;
+    currentMax = max;
+    
+    const tableBody = document.getElementById("product-body");
+    const rows = tableBody.getElementsByClassName("med-row");
+    const menu = document.getElementById("categoryMenu");
+    
+    menu.classList.remove("show-grid");
+    menu.style.display = "none";
+    document.getElementById("typeBtn").innerText = catName;
+
+    tableBody.style.display = 'none'; 
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const slNo = parseInt(row.cells[0].textContent);
+        
+        // കാറ്റഗറി പരിധിയിൽ ഉണ്ടോ എന്ന് നോക്കുന്നു
+        if (slNo >= min && slNo <= max) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    }
+    tableBody.style.display = '';
+}
+
+function toggleCategoryMenu() {
+    const menu = document.getElementById("categoryMenu");
+    const isGrid = menu.style.display === "grid";
+    
+    if (isGrid) {
+        menu.style.display = "none";
+        menu.classList.remove("show-grid");
+    } else {
+        menu.style.display = "grid";
+        menu.classList.add("show-grid");
+    }
+}
+
+// 1. നിലവിലെ ഫയൽ വേർഷൻ (അടുത്ത തവണ ഇത് 1.1 ആക്കി മാറ്റണം)
+
+    // 1. നിങ്ങളുടെ നിലവിലെ ഫയൽ വേർഷൻ (ഓരോ തവണ മാറ്റം വരുത്തുമ്പോഴും ഇത് കൂട്ടുക)
+    const currentVersion = 1.1; 
+
+    // 2. GitHub-ലെ version.json ഫയലിന്റെ ശരിയായ RAW ലിങ്ക്
+    const versionUrl = "https://raw.githubusercontent.com/rubundroid/rubundroid/main/version.json";
+
+    async function checkForUpdate() {
+        try {
+            // ഇന്റർനെറ്റ് ഇല്ലെങ്കിൽ ചെക്കിംഗ് ഒഴിവാക്കും
+            if (!navigator.onLine) return;
+
+            // GitHub-ൽ നിന്ന് പുതിയ വേർഷൻ വിവരം എടുക്കുന്നു (Cache ഒഴിവാക്കാൻ {cache: "no-store"} ചേർത്തു)
+            const response = await fetch(versionUrl, { cache: "no-store" });
+            const data = await response.json();
+
+            // വേർഷൻ താരതമ്യം ചെയ്യുന്നു
+            if (data.latestVersion > currentVersion) {
+                const msg = `പുതിയ അപ്ഡേറ്റ് ലഭ്യമാണ് (V${data.latestVersion}).\n\nഈ ഫയൽ അപ്ഡേറ്റ് ചെയ്ത് പുതിയത് ഡൗൺലോഡ് ചെയ്യണോ?`;
+                
+                if (confirm(msg)) {
+                    // ഡൗൺലോഡ് പ്രോസസ്സ് തുടങ്ങുന്നു
+                    forceDownload(data.downloadUrl, `Medicine_Indent_V${data.latestVersion}.html`);
+                }
+            }
+        } catch (error) {
+            console.log("Update check failed or skipped:", error);
+        }
+    }
+
+    // ഫയൽ നേരിട്ട് ഡൗൺലോഡ് ചെയ്യിക്കാനുള്ള ഫങ്ക്ഷൻ
+   function forceDownload(url, fileName) {
+    fetch(url)
+        .then(response => response.blob()) // ഫയലിനെ ഒരു ബ്ലോബ് (Blob) ആയി മാറ്റുന്നു
+        .then(blob => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = fileName; // ഇവിടെയാണ് ഫയൽ പേര് നിശ്ചയിക്കുന്നത്
+            document.body.appendChild(anchor);
+            anchor.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(anchor);
+        })
+        .catch(() => {
+            // എന്തെങ്കിലും കാരണവശാൽ പരാജയപ്പെട്ടാൽ പഴയ ലിങ്ക് വഴി ശ്രമിക്കും
+            window.location.href = url;
+        });
+}
+
+    // പേജ് ലോഡ് ആയി 3 സെക്കന്റിന് ശേഷം മാത്രം അപ്ഡേറ്റ് നോക്കുന്നു (ലോഡിംഗ് സ്പീഡ് കുറയാതിരിക്കാൻ)
+    window.addEventListener('load', () => {
+        setTimeout(checkForUpdate, 3000);
+    });
+
+</script>
+</body>
+</html>
