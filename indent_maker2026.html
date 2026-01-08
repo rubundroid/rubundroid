@@ -1856,6 +1856,43 @@ function toggleCategoryMenu() {
     }
 }
 
+// 1. നിലവിലെ ഫയൽ വേർഷൻ (അടുത്ത തവണ ഇത് 1.1 ആക്കി മാറ്റണം)
+// 1. നിലവിലെ ഫയൽ വേർഷൻ (അടുത്ത തവണ ഇത് 1.1 ആക്കി മാറ്റണം)
+const currentVersion = 1.0; 
+
+// 2. GitHub-ലെ version.json ഫയലിന്റെ RAW ലിങ്ക് ഇവിടെ നൽകുക
+const versionUrl = "https://raw.githubusercontent.com/rubundroid/rubundroid/main/version.json";
+
+async function checkForUpdate() {
+    try {
+        // ഇന്റർനെറ്റ് ഉണ്ടെങ്കിൽ മാത്രം ചെക്ക് ചെയ്യും
+        if (!navigator.onLine) return;
+
+        const response = await fetch(versionUrl, { cache: "no-store" });
+        const data = await response.json();
+
+        // വേർഷൻ വ്യത്യാസം ഉണ്ടെങ്കിൽ മാത്രം പോപ്പ്-അപ്പ് കാണിക്കും
+        if (data.latestVersion > currentVersion) {
+            const msg = `പുതിയ അപ്ഡേറ്റ് ലഭ്യമാണ് (V${data.latestVersion}).\n\nപുതിയ ഫയൽ ഡൗൺലോഡ് ചെയ്യണോ?`;
+            if (confirm(msg)) {
+// ഡൗൺലോഡ് നിർബന്ധമാക്കാൻ ഈ ഫങ്ക്ഷൻ ഉപയോഗിക്കാം
+const link = document.createElement('a');
+link.href = data.downloadUrl;
+link.download = 'indentmaker.html'; // ഫയലിന് നൽകേണ്ട പേര്
+link.click();
+
+            }
+        }
+    } catch (error) {
+        console.log("Update check skipped."); // സൈലന്റ് ആയി ഒഴിവാക്കും
+    }
+}
+
+// പേജ് ലോഡ് ആകുമ്പോൾ അപ്ഡേറ്റ് ചെക്ക് ചെയ്യുന്നു
+window.addEventListener('load', checkForUpdate);
+
+
+
 </script>
 </body>
 </html>
