@@ -71,30 +71,45 @@
     // പുതിയൊരു Proxy (Cloudflare Worker) വഴി ശ്രമിക്കുന്നു - ഇത് കൂടുതൽ സ്റ്റേബിൾ ആണ്
     const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetCsvUrl);
 
-    fetch(proxyUrl)
+fetch(proxyUrl)
         .then(res => res.text())
         .then(csvText => {
-            const rows = csvText.trim().split('\n').slice(1);
-            document.getElementById('visit-count').innerText = rows.length;
+            const rows = csvText.trim().split('\n').filter(row => row.length > 5);
+            const dataRows = rows.slice(1);
+            document.getElementById('visit-count').innerText = dataRows.length;
 
             const dailyCounts = {};
-            rows.forEach(row => {
-                const date = row.split(',')[0].split(' ')[0].replace(/['"]+/g, '');
-                if(date) dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+            dataRows.forEach(row => {
+                const parts = row.split(',');
+                if (parts[0]) {
+                    // തീയതി മാത്രം എടുക്കുന്നു
+                    const date = parts[0].split(' ')[0].replace(/['"]+/g, '');
+                    dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+                }
             });
 
-            // പട്ടിക ഉണ്ടാക്കുന്നു (Table)
+            // പട്ടിക (Table) സെറ്റ് ചെയ്യുന്നു
             const tableBody = document.getElementById('statsTable');
-            tableBody.innerHTML = '';
+            tableBody.innerHTML = ''; // ലോഡിംഗ് മെസ്സേജ് മാറ്റുന്നു
             
-            // തീയതികൾ തിരിച്ച് ക്രമീകരിക്കുന്നു (പുതിയത് ആദ്യം)
-            const sortedDates = Object.keys(dailyCounts).sort((a,b) => new Date(b) - new Date(a));
+            // തീയതികൾ പുതിയത് ആദ്യം വരാൻ സോർട്ട് ചെയ്യുന്നു
+            const sortedDates = Object.keys(dailyCounts).sort((a,b) => {
+                return new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-'));
+            });
             
+            if(sortedDates.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2">No data found</td></tr>';
+            }
+
             sortedDates.forEach(date => {
-                tableBody.innerHTML += `<tr><td>${date}</td><td><b>${dailyCounts[date]}</b></td></tr>`;
+                const row = `<tr>
+                    <td>${date}</td>
+                    <td><b>${dailyCounts[date]}</b></td>
+                </tr>`;
+                tableBody.innerHTML += row;
             });
 
-            // ഗ്രാഫ് ഉണ്ടാക്കുന്നു (Chart)
+            // ഗ്രാഫ് സെറ്റ് ചെയ്യുന്നു
             new Chart(document.getElementById('visitChart'), {
                 type: 'line',
                 data: {
@@ -113,8 +128,10 @@
         })
         .catch(err => {
             document.getElementById('visit-count').innerText = "Error";
+            document.getElementById('statsTable').innerHTML = '<tr><td colspan="2">Error loading table</td></tr>';
             console.error(err);
         });
 </script>
 </body>
 </html>
+
