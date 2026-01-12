@@ -7,119 +7,114 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: auto; }
-        h1 { color: #1a73e8; margin-bottom: 5px; }
-        .subtitle { color: #666; margin-bottom: 30px; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .container { max-width: 900px; margin: auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; }
         .card h3 { margin: 0; font-size: 0.9rem; color: #5f6368; text-transform: uppercase; }
-        .card p { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #202124; }
-        
-        .chart-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); height: 400px; }
-        .loading { color: #1a73e8; font-weight: bold; }
+        .card p { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #1a73e8; }
+        .chart-section, .table-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        th { background-color: #f8f9fa; color: #555; }
+        tr:nth-child(even) { background-color: #fafafa; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Indent Maker Analytics</h1>
-    <p class="subtitle">തത്സമയ വിവരങ്ങൾ താഴെ കാണാം</p>
-
+    <h1 style="color: #1a73e8;">Indent Maker Analytics</h1>
+    
     <div class="stats-grid">
         <div class="card">
-            <h3>Total Downloads (GitHub)</h3>
-            <p id="download-count" class="loading">...</p>
+            <h3>Total Downloads</h3>
+            <p id="download-count">...</p>
         </div>
         <div class="card">
-            <h3>Total Visits (Tracker)</h3>
-            <p id="visit-count" class="loading">...</p>
+            <h3>Total Visits</h3>
+            <p id="visit-count">...</p>
         </div>
     </div>
 
     <div class="chart-section">
-        <canvas id="visitChart"></canvas>
+        <canvas id="visitChart" height="300"></canvas>
+    </div>
+
+    <div class="table-section">
+        <h3>Date-wise Visits</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody id="statsTable">
+                <tr><td colspan="2">Loading data...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    // 1. ഗൂഗിൾ ഷീറ്റ് വിവരങ്ങൾ (CORS പ്രശ്നം ഒഴിവാക്കാൻ Proxy വഴി)
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZt3vnXnKp_vAwjrm_UTY7lk5_1THEtdnv6q7Rh_-u0xGvJUiFdWHMRa1k1QnW7Ahbhk1SX9vuO0NP/pub?gid=100800314&single=true&output=csv';
-    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(sheetUrl);
+    // 1. GitHub Downloads
+    fetch('https://api.github.com/repos/rubundroid/rubundroid/releases')
+        .then(r => r.json())
+        .then(data => {
+            let total = 0;
+            data.forEach(rel => rel.assets.forEach(as => total += as.download_count));
+            document.getElementById('download-count').innerText = total;
+        });
+
+    // 2. Google Sheets Data with Date-wise grouping
+    const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZt3vnXnKp_vAwjrm_UTY7lk5_1THEtdnv6q7Rh_-u0xGvJUiFdWHMRa1k1QnW7Ahbhk1SX9vuO0NP/pub?gid=100800314&single=true&output=csv';
+    
+    // പുതിയൊരു Proxy (Cloudflare Worker) വഴി ശ്രമിക്കുന്നു - ഇത് കൂടുതൽ സ്റ്റേബിൾ ആണ്
+    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetCsvUrl);
 
     fetch(proxyUrl)
-        .then(res => {
-            if (!res.ok) throw new Error('Network error');
-            return res.text();
-        })
-        .then(csvData => {
-            const rows = csvData.trim().split('\n').filter(row => row.trim() !== "");
-            const dataRows = rows.slice(1); // ഹെഡർ ഒഴിവാക്കുന്നു
-            
-            // ആകെ വിസിറ്റ് എണ്ണം കാണിക്കുന്നു
-            document.getElementById('visit-count').innerText = dataRows.length;
-            document.getElementById('visit-count').classList.remove('loading');
+        .then(res => res.text())
+        .then(csvText => {
+            const rows = csvText.trim().split('\n').slice(1);
+            document.getElementById('visit-count').innerText = rows.length;
 
-            // ദിവസേനയുള്ള കണക്ക് ഗ്രാഫിനായി തരംതിരിക്കുന്നു
-            const dailyData = {};
-            dataRows.forEach(row => {
-                const parts = row.split(',');
-                if (parts[0]) {
-                    const date = parts[0].split(' ')[0].replace(/['"]+/g, '');
-                    dailyData[date] = (dailyData[date] || 0) + 1;
-                }
+            const dailyCounts = {};
+            rows.forEach(row => {
+                const date = row.split(',')[0].split(' ')[0].replace(/['"]+/g, '');
+                if(date) dailyCounts[date] = (dailyCounts[date] || 0) + 1;
             });
 
-            createChart(Object.keys(dailyData), Object.values(dailyData));
+            // പട്ടിക ഉണ്ടാക്കുന്നു (Table)
+            const tableBody = document.getElementById('statsTable');
+            tableBody.innerHTML = '';
+            
+            // തീയതികൾ തിരിച്ച് ക്രമീകരിക്കുന്നു (പുതിയത് ആദ്യം)
+            const sortedDates = Object.keys(dailyCounts).sort((a,b) => new Date(b) - new Date(a));
+            
+            sortedDates.forEach(date => {
+                tableBody.innerHTML += `<tr><td>${date}</td><td><b>${dailyCounts[date]}</b></td></tr>`;
+            });
+
+            // ഗ്രാഫ് ഉണ്ടാക്കുന്നു (Chart)
+            new Chart(document.getElementById('visitChart'), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(dailyCounts).reverse(),
+                    datasets: [{
+                        label: 'Visits',
+                        data: Object.values(dailyCounts).reverse(),
+                        borderColor: '#1a73e8',
+                        tension: 0.3,
+                        fill: true,
+                        backgroundColor: 'rgba(26, 115, 232, 0.05)'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         })
         .catch(err => {
             document.getElementById('visit-count').innerText = "Error";
             console.error(err);
         });
-
-    // 2. GitHub ഡൗൺലോഡ് കൗണ്ട്
-    const ghUser = 'rubundroid';
-    const ghRepo = 'rubundroid';
-
-    fetch(`https://api.github.com/repos/${ghUser}/${ghRepo}/releases`)
-        .then(res => res.json())
-        .then(releases => {
-            let count = 0;
-            if (Array.isArray(releases)) {
-                releases.forEach(rel => {
-                    rel.assets.forEach(asset => count += asset.download_count);
-                });
-            }
-            document.getElementById('download-count').innerText = count;
-            document.getElementById('download-count').classList.remove('loading');
-        })
-        .catch(() => document.getElementById('download-count').innerText = "0");
-
-    // 3. ഗ്രാഫ് നിർമ്മിക്കുന്ന ഫങ്ക്ഷൻ
-    function createChart(labels, values) {
-        const ctx = document.getElementById('visitChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Daily Visits',
-                    data: values,
-                    borderColor: '#1a73e8',
-                    backgroundColor: 'rgba(26, 115, 232, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
-            }
-        });
-    }
 </script>
-
 </body>
 </html>
