@@ -3,96 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indent Maker - Basic Stats</title>
+    <title>Indent Maker - Official Analytics</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: inline-block; width: 200px; margin: 10px; }
-        .card h3 { font-size: 0.8rem; color: #666; margin: 0; }
-        .card p { font-size: 2rem; font-weight: bold; margin: 10px 0; color: #2c3e50; }
-        table { width: 100%; max-width: 400px; margin: 20px auto; border-collapse: collapse; background: white; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-        th { background: #3498db; color: white; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 25px; }
+        
+        /* Stats Cards */
+        .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #1a73e8; }
+        .card h3 { margin: 0; font-size: 0.75rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card p { font-size: 2rem; font-weight: bold; margin: 10px 0; color: #1a73e8; }
+
+        /* Table Design */
+        .table-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+        th { color: #1a73e8; font-size: 0.8rem; text-transform: uppercase; font-weight: 600; }
+        td { font-size: 0.95rem; }
+        .badge { background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; float: right; }
     </style>
 </head>
 <body>
 
+<div class="container">
     <h2>Indent Maker Live Stats</h2>
 
-    <div class="card">
-        <h3>GitHub Downloads</h3>
-        <p id="downloads">...</p>
+    <div class="card-row">
+        <div class="card">
+            <h3>Downloads</h3>
+            <p id="total-downloads">...</p>
+        </div>
+        <div class="card">
+            <h3>Total Visits</h3>
+            <p id="total-visits">0</p>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>Total Visits</h3>
-        <p id="visits">0</p>
+    <div class="table-card">
+        <h3 style="margin-top:0; font-size: 1rem; color:#444;">Daily Breakdown</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date (തീയതി)</th>
+                    <th style="text-align:right;">Visits</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <tr><td colspan="2" style="text-align:center; padding:30px;">ഡാറ്റ ലോഡ് ചെയ്യുന്നു...</td></tr>
+            </tbody>
+        </table>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Count</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-            <tr><td colspan="2">Loading Data...</td></tr>
-        </tbody>
-    </table>
+</div>
 
 <script>
-    // 1. GitHub ഡൗൺലോഡ് കൗണ്ട് (ഇത് നിലവിൽ വർക്കിംഗ് ആണ്)
+    // 1. GitHub Downloads Fetch
     fetch('https://api.github.com/repos/rubundroid/rubundroid/releases')
         .then(res => res.json())
         .then(data => {
             let total = 0;
-            data.forEach(rel => rel.assets.forEach(as => total += as.download_count));
-            document.getElementById('downloads').innerText = total;
-        });
+            if(Array.isArray(data)) {
+                data.forEach(rel => rel.assets.forEach(as => total += as.download_count));
+            }
+            document.getElementById('total-downloads').innerText = total;
+        })
+        .catch(() => document.getElementById('total-downloads').innerText = "Error");
 
-    // 2. ഗൂഗിൾ ഷീറ്റ് ഡാറ്റ - ബേസിക് ഫിക്സ്
+    // 2. Google Sheets Data Fetch
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZt3vnXnKp_vAwjrm_UTY7lk5_1THEtdnv6q7Rh_-u0xGvJUiFdWHMRa1k1QnW7Ahbhk1SX9vuO0NP/pub?gid=100800314&single=true&output=csv';
     const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetUrl);
 
     fetch(proxyUrl)
         .then(res => res.text())
         .then(csv => {
-            const rows = csv.split('\n');
+            const rows = csv.split(/\r?\n/);
             const dailyCounts = {};
             let grandTotal = 0;
 
             rows.forEach((row, index) => {
-                if (index === 0) return; // ഹെഡർ ഒഴിവാക്കുന്നു
+                if (index === 0 || !row.trim()) return; // ഹെഡറും ഒഴിഞ്ഞ വരികളും ഒഴിവാക്കുന്നു
 
                 const cols = row.split(',');
-                const dateCell = cols[0] ? cols[0].trim().replace(/['"]+/g, '') : "";
+                // ഷീറ്റിലെ ആദ്യത്തെ സെൽ (Timestamp) എടുക്കുന്നു
+                const fullTimestamp = cols[0] ? cols[0].trim().replace(/['"]+/g, '') : "";
 
-                // വളരെ ലളിതമായ പരിശോധന: ആദ്യ കോളത്തിൽ സ്ലാഷ് (/) ഉണ്ടെങ്കിൽ മാത്രം എണ്ണുക
-                if (dateCell.includes('/')) {
-                    const dateOnly = dateCell.split(' ')[0]; // സമയം ഒഴിവാക്കി തീയതി മാത്രം
-                    dailyCounts[dateOnly] = (dailyCounts[dateOnly] || 0) + 1;
-                    grandTotal++;
+                // തീയതി പരിശോധിക്കുന്നു (സ്ക്രീൻഷോട്ടിലെ പോലെ 1/11/2026 ഫോർമാറ്റ്)
+                if (fullTimestamp && fullTimestamp.includes('/')) {
+                    // സമയം ഒഴിവാക്കി തീയതി മാത്രം എടുക്കുന്നു (ഉദാ: 1/11/2026)
+                    const dateOnly = fullTimestamp.split(' ')[0];
+                    
+                    if (dateOnly.length >= 8) {
+                        dailyCounts[dateOnly] = (dailyCounts[dateOnly] || 0) + 1;
+                        grandTotal++;
+                    }
                 }
             });
 
-            document.getElementById('visits').innerText = grandTotal;
-            const tableBody = document.getElementById('tableBody');
+            document.getElementById('total-visits').innerText = grandTotal;
+            const tableBody = document.getElementById('table-body');
             tableBody.innerHTML = '';
 
-            // തീയതികൾ സോർട്ട് ചെയ്യുന്നു
-            const sortedDates = Object.keys(dailyCounts).sort((a,b) => {
-                const pA = a.split('/'); const pB = b.split('/');
-                return new Date(pB[2], pB[1]-1, pB[0]) - new Date(pA[2], pA[1]-1, pA[0]);
+            // തീയതികൾ ക്രമമായി സോർട്ട് ചെയ്യുന്നു (പുതിയത് ആദ്യം)
+            const sortedDates = Object.keys(dailyCounts).sort((a, b) => {
+                const parse = (str) => {
+                    const p = str.split('/');
+                    return new Date(p[2], p[1]-1, p[0]); // Year, Month, Day
+                };
+                return parse(b) - parse(a);
             });
 
+            if (sortedDates.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center;">ഡാറ്റ ലഭ്യമല്ല</td></tr>';
+            }
+
             sortedDates.forEach(date => {
-                tableBody.innerHTML += `<tr><td>${date}</td><td>${dailyCounts[date]}</td></tr>`;
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${date}</td>
+                        <td><span class="badge">${dailyCounts[date]}</span></td>
+                    </tr>`;
             });
         })
         .catch(err => {
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="2">Error!</td></tr>';
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="2" style="text-align:center; color:red;">Connection Error!</td></tr>';
         });
 </script>
-
 </body>
 </html>
