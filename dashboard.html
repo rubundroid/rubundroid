@@ -3,116 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indent Maker Analytics - Final Fix</title>
+    <title>Indent Maker - Analytics Fix</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 600px; margin: auto; }
-        .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center; border-top: 5px solid #1a73e8; }
-        .card h3 { margin: 0; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        .card p { font-size: 2rem; font-weight: bold; margin: 10px 0; color: #1a73e8; }
-        .table-section { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 8px; border-bottom: 1px solid #edf2f7; text-align: left; font-size: 0.95rem; }
-        th { color: #1a73e8; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
-        .count-badge { background: #e1effe; color: #1a73e8; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; float: right; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; border-top: 5px solid #1a73e8; }
+        .card p { font-size: 2.5rem; font-weight: bold; margin: 10px 0; color: #1a73e8; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background-color: #1a73e8; color: white; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2 style="text-align:center; color:#1a73e8; margin-bottom:20px;">Live Analytics</h2>
-    
-    <div class="card-row">
-        <div class="card">
-            <h3>Downloads</h3>
-            <p id="total-downloads">...</p>
-        </div>
-        <div class="card">
-            <h3>Visits</h3>
-            <p id="total-visits">...</p>
-        </div>
+<div style="max-width: 600px; margin: auto;">
+    <div class="card">
+        <h3>Total Downloads</h3>
+        <p id="total-downloads">0</p>
+    </div>
+    <div class="card">
+        <h3>Total Visits (Accurate)</h3>
+        <p id="total-visits">0</p>
     </div>
 
-    <div class="table-section">
-        <h3 style="margin: 0 0 15px 0; font-size: 1rem; color: #444;">Date-wise Visits</h3>
-        <table id="statsTable">
-            <thead>
-                <tr>
-                    <th>Date (തീയതി)</th>
-                    <th style="text-align:right;">Visits</th>
-                </tr>
-            </thead>
-            <tbody id="table-body">
-                <tr><td colspan="2" style="text-align:center; padding:30px;">Loading Data...</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>തീയതി (Date)</th>
+                <th>സന്ദർശകർ (Visits)</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr><td colspan="2">Loading...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
-    // 1. GitHub ഡൗൺലോഡ് കൗണ്ട്
+    // GitHub Downloads
     fetch('https://api.github.com/repos/rubundroid/rubundroid/releases')
-        .then(res => res.json())
-        .then(data => {
+        .then(r => r.json()).then(data => {
             let total = 0;
             data.forEach(rel => rel.assets.forEach(as => total += as.download_count));
             document.getElementById('total-downloads').innerText = total;
         });
 
-    // 2. ഗൂഗിൾ ഷീറ്റ് ഡാറ്റ (Visits)
+    // Google Sheets - തീയതി മാത്രം എണ്ണാനുള്ള ലോജിക്
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZt3vnXnKp_vAwjrm_UTY7lk5_1THEtdnv6q7Rh_-u0xGvJUiFdWHMRa1k1QnW7Ahbhk1SX9vuO0NP/pub?gid=100800314&single=true&output=csv';
     const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(sheetUrl);
 
     fetch(proxyUrl)
         .then(res => res.text())
-        .then(csvText => {
-            // സ്ക്രീൻഷോട്ടിലെ പ്രശ്നം പരിഹരിക്കാൻ കൂടുതൽ കൃത്യമായ Split രീതി
-            const rows = csvText.split(/\r?\n/);
+        .then(csv => {
+            const rows = csv.split('\n');
             const dailyCounts = {};
-            let grandTotal = 0;
+            let validTotal = 0;
 
             rows.forEach((row, index) => {
-                if (index === 0) return; // ഹെഡർ ഒഴിവാക്കുന്നു
-
-                const columns = row.split(',');
-                const dateCell = columns[0] ? columns[0].trim().replace(/['"]+/g, '') : "";
-
-                // തീയതിയിൽ '/' ഉണ്ടെങ്കിൽ മാത്രം അത് വിസിറ്റ് ആയി കണക്കാക്കുന്നു
-                // ഇത് അനാവശ്യ കോഡുകൾ (window, if, var) പട്ടികയിൽ വരുന്നത് തടയും
-                if (dateCell && dateCell.includes('/')) {
-                    const dateOnly = dateCell.split(' ')[0]; // സമയം കളഞ്ഞ് തീയതി മാത്രം
+                if (index === 0) return; // Header ഒഴിവാക്കുന്നു
+                const firstCol = row.split(',')[0].trim().replace(/['"]+/g, '');
+                
+                // സ്ലാഷ് (/) ഉള്ള വരികൾ തീയതികളാണെന്ന് ഉറപ്പിക്കുന്നു
+                if (firstCol && firstCol.includes('/')) {
+                    const dateOnly = firstCol.split(' ')[0]; // സമയം കളയുന്നു
                     dailyCounts[dateOnly] = (dailyCounts[dateOnly] || 0) + 1;
-                    grandTotal++;
+                    validTotal++;
                 }
             });
 
-            document.getElementById('total-visits').innerText = grandTotal;
-
+            document.getElementById('total-visits').innerText = validTotal;
             const tableBody = document.getElementById('table-body');
             tableBody.innerHTML = '';
 
-            // തീയതികൾ സോർട്ട് ചെയ്യുന്നു (ഏറ്റവും പുതിയത് മുകളിൽ)
+            // തീയതികൾ സോർട്ട് ചെയ്യുന്നു
             const sortedDates = Object.keys(dailyCounts).sort((a, b) => {
-                const partsA = a.split('/');
-                const partsB = b.split('/');
-                return new Date(partsB[2], partsB[1]-1, partsB[0]) - new Date(partsA[2], partsA[1]-1, partsA[0]);
+                const dA = a.split('/').reverse().join('-');
+                const dB = b.split('/').reverse().join('-');
+                return new Date(dB) - new Date(dA);
             });
-
-            if (sortedDates.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No valid data found</td></tr>';
-            }
 
             sortedDates.forEach(date => {
-                tableBody.innerHTML += `
-                    <tr>
-                        <td>${date}</td>
-                        <td><span class="count-badge">${dailyCounts[date]}</span></td>
-                    </tr>`;
+                tableBody.innerHTML += `<tr><td>${date}</td><td><b>${dailyCounts[date]}</b></td></tr>`;
             });
-        })
-        .catch(err => {
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="2" style="text-align:center; color:red;">Error loading data</td></tr>';
         });
 </script>
 </body>
