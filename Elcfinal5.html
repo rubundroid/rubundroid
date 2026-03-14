@@ -1,0 +1,330 @@
+<div style="font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; width: 100%; padding: 0 10px; box-sizing: border-box;">
+    <div style="max-width: 550px; width: 100%; padding: 25px; border: 2px solid #1a73e8; border-radius: 15px; background: #ffffff; box-shadow: 0 5px 20px rgba(0,0,0,0.15); box-sizing: border-box; position: relative;">
+        
+        <div id="customAlert" style="display:none; position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 9999; width: 320px; border: 1px solid #ccc;">
+            <div style="padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; color: #666; font-weight: bold;">www.sparktips.in says</div>
+            <div id="alertMsg" style="padding: 25px 20px; font-size: 16px; color: #333; line-height: 1.4;">Warning!</div>
+            <div style="text-align: right; padding: 10px; background: #f9f9f9; border-radius: 0 0 12px 12px;">
+                <button onclick="document.getElementById('customAlert').style.display='none'" style="background: #1a73e8; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold;">OK</button>
+            </div>
+        </div>
+
+        <h1 style="text-align: center; color: #1a73e8; margin-bottom: 25px; font-size: 26px; font-weight: 900; text-transform: uppercase;">Earned Leave Calculator</h1>
+        
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: bold;">EL Rate:</label>
+            <select id="elRate" onchange="toggleApptDate()" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; font-size: 16px;">
+                <option value="11">1/11</option>
+                <option value="22">1/22 (First Year)</option>
+                <option value="22pt">1/22 (Part Time)</option>
+                <option value="20">1/20 (Farm Labourers)</option>
+            </select>
+        </div>
+
+        <div id="apptDiv" style="display: none; margin-bottom: 18px; background: #fffde7; padding: 15px; border-radius: 10px; border: 1px dashed #fbc02d;">
+            <label style="font-weight: bold; color: #f57f17;">Date of Entry in Service (Part-Time):</label>
+            <input type="date" id="apptDate" style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: bold;">Enter Previous Balance:</label>
+            <input type="text" id="prevBalance" placeholder="12 1/11" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: bold;">Duty From Date:</label>
+            <input type="date" id="dFrom" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: bold;">Duty To Date:</label>
+            <input type="date" id="dTo" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 18px;">
+            <label style="font-weight: bold;">Total Leave/Dies-non:</label>
+            <input type="number" id="diesnon" value="0" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <button type="button" onclick="runCalcEL()" style="width: 100%; padding: 15px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin-bottom: 20px;">CALCULATE EARNED LEAVE</button>
+
+        <div style="background: #eef4ff; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 6px solid #1a73e8;">
+            <div style="font-size: 17px; font-weight: bold; margin-bottom: 8px;">Period in Days: <span id="resDays">0</span></div>
+            <div style="font-size: 17px; font-weight: bold; margin-bottom: 8px;">Earned Leave: <span id="resEarned" style="font-size: 20px;">0</span></div>
+            <div style="font-size: 17px; font-weight: bold;">Leave at Credit: <span id="resCredit" style="color: #d93025; font-size: 24px;">0</span></div>
+        </div>
+
+        <hr style="border: 1px solid #ddd; margin: 25px 0;">
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold;">EL/Surrender Taken From:</label>
+            <input type="date" id="sFrom" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold;">EL/Surrender Taken To:</label>
+            <input type="date" id="sTo" style="width: 100%; padding: 12px; margin-top: 8px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <button type="button" onclick="runCalcBal()" style="width: 100%; padding: 15px; background-color: #34a853; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; margin-bottom: 20px;">CALCULATE BALANCE</button>
+        <div style="padding: 20px; background: #fff5f5; border: 2px solid #ffcdd2; border-radius: 12px;">
+            <p style="margin: 0 0 10px 0; font-size: 17px; font-weight: bold;">Period in Days: <span id="resSurrDays" style="font-size: 19px;">0</span></p>
+            <div style="font-size: 17px; font-weight: bold;">Balance EL: <span id="resBalance" style="color: #d93025; font-size: 24px; font-weight: 900;">0</span></div>
+        </div>
+                <div id="counterContainer" style="display: none; text-align: center; font-size: 14px; color: #4b5563; margin-top: 15px; padding: 10px; background-color: #e0e7ff; border-radius: 8px;">
+            Total Calculations: <span id="countDisplay" style="font-weight: 900; color: #4f46e5; font-size: 16px;">0</span>
+        </div>
+
+        <p style="text-align:center; font-size: 18px; color: #333; margin-top: 25px; font-weight: 900;">www.sparktips.in</p>
+        
+    </div>
+</div>
+
+
+<script>
+    const counterNamespace = "sparktips-el-calculator"; 
+    const counterKey = "total-calculations";
+
+    // 1. പേജ് തുറക്കുമ്പോൾ നിലവിലെ കൗണ്ട് കാണിക്കാൻ
+    function getInitialCount() {
+      fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.count && data.count > 0) {
+            document.getElementById("countDisplay").innerText = data.count;
+            document.getElementById("counterContainer").style.display = "block";
+          }
+        })
+        .catch((error) => {
+          console.log("Counter blocked by browser or ad-blocker.");
+        });
+    }
+
+    // 2. ബട്ടൺ അമർത്തുമ്പോൾ കൗണ്ട് 1 കൂട്ടാൻ
+    function incrementCounter() {
+      fetch(`https://api.counterapi.dev/v1/${counterNamespace}/${counterKey}/up`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.count) {
+            document.getElementById("countDisplay").innerText = data.count;
+            document.getElementById("counterContainer").style.display = "block";
+          }
+        })
+        .catch((error) => console.log("Counter increment failed."));
+    }
+
+    // പേജ് ലോഡ് ആകുമ്പോൾ നിലവിലെ കൗണ്ട് എടുക്കാൻ ഇത് സഹായിക്കും
+    window.onload = getInitialCount;
+
+  
+    function showAlert(msg) {
+        document.getElementById('alertMsg').innerText = msg;
+        document.getElementById('customAlert').style.display = 'block';
+    }
+
+    function toggleApptDate() {
+        let r = document.getElementById('elRate').value;
+        document.getElementById('apptDiv').style.display = (r === '22pt') ? 'block' : 'none';
+        
+        let prevBalInput = document.getElementById('prevBalance');
+        let container = prevBalInput.closest('tr') || prevBalInput.closest('div') || prevBalInput.parentElement;
+
+        if (r === '22') {
+            if (container) container.style.display = 'none'; 
+            prevBalInput.value = ''; 
+        } else {
+            if (container) container.style.display = ''; 
+        }
+
+        let map = {"11":"12 1/11", "22":"12 1/22", "22pt":"12 1/22", "20":"12 1/20"};
+        prevBalInput.placeholder = map[r] || "12 1/11";
+    }
+
+    function getFHtml(n, d) {
+        return '<span style="display:inline-block; vertical-align:middle; text-align:center; line-height: 1; margin-left: 5px;">' +
+               '<span style="display:block; border-bottom:1px solid #000; padding:0 3px;">' + n + '</span>' +
+               '<span style="display:block; padding:0 3px;">' + d + '</span></span>';
+    }
+
+    function fmtDisplay(val, den, rate, isRoundField, isLimited) {
+        let absVal = Math.abs(val);
+        let whole = Math.floor(absVal + 0.0000001);
+        let rem = Math.round((absVal - whole) * den);
+        if (rem === den) { whole++; rem = 0; }
+        let sign = val < 0 ? '-' : '';
+        
+        let displayStr = "";
+        
+        if (isRoundField && rate === '22') {
+            let rVal = (rem >= (den / 2)) ? Math.ceil(absVal) : Math.floor(absVal);
+            displayStr = sign + rVal;
+            if (rem > 0) {
+                displayStr += ' <span style="font-size:12px; color:#d93025; font-weight:bold;">(Rounded)</span>';
+            }
+        } else if (rem === 0) {
+            displayStr = sign + whole;
+        } else {
+            displayStr = sign + whole + getFHtml(rem, den);
+        }
+
+        if (isLimited) {
+            displayStr += ' <span style="font-size:12px; color:#d93025; font-weight:bold;">(Limited)</span>';
+        }
+        
+        return displayStr;
+    }
+
+    function parseVal(s) {
+        if (!s) return 0;
+        let p = s.trim().split(/\s+/);
+        if (p.length === 2) {
+            let f = p[1].split('/');
+            return parseFloat(p[0]) + (parseInt(f[0]) / (parseInt(f[1]) || 1));
+        }
+        if (s.includes('/')) {
+            let f = s.split('/');
+            return (parseInt(f[0]) || 0) / (parseInt(f[1]) || 1);
+        }
+        return parseFloat(s) || 0;
+    }
+
+    function calculateLogic(r, prev, d1v, d2v, apptV, dies) {
+        let start = new Date(d1v);
+        let end = new Date(d2v);
+        let totalDays = Math.round((end - start) / 86400000) + 1;
+        let den = (r == '11') ? 11 : (r == '20' ? 20 : 22);
+
+        let earnedTotalCapped = 0;
+        let earnedTotalActual = 0; 
+        let isCapped15 = false;
+
+        if (r === '22pt' && apptV) {
+            let appt = new Date(apptV);
+            let tempStart = new Date(start);
+            while (tempStart <= end) {
+                let curYearStart = new Date(appt);
+                let diff = tempStart.getFullYear() - appt.getFullYear();
+                curYearStart.setFullYear(appt.getFullYear() + diff);
+                if (curYearStart > tempStart) curYearStart.setFullYear(curYearStart.getFullYear() - 1);
+                
+                let curYearEnd = new Date(curYearStart);
+                curYearEnd.setFullYear(curYearStart.getFullYear() + 1);
+                curYearEnd.setDate(curYearEnd.getDate() - 1);
+                
+                let segmentEnd = new Date(Math.min(end, curYearEnd));
+                let segmentDays = Math.round((segmentEnd - tempStart) / 86400000) + 1;
+                let segmentDies = Math.round((segmentDays / totalDays) * dies);
+                let netSegmentDays = Math.max(0, segmentDays - segmentDies);
+                
+                let actualEarned = netSegmentDays / 22;
+                earnedTotalActual += actualEarned; 
+                
+                let pastDaysInYear = 0;
+                if (tempStart > curYearStart) {
+                    pastDaysInYear = Math.round((tempStart - curYearStart) / 86400000);
+                }
+                
+                let pastLeave = pastDaysInYear / 22; 
+                let totalLeaveThisYear = pastLeave + actualEarned; 
+                
+                if (totalLeaveThisYear > 15) isCapped15 = true; 
+                
+                let cappedLeaveForSegment = Math.max(0, Math.min(15, totalLeaveThisYear) - Math.min(15, pastLeave));
+                earnedTotalCapped += cappedLeaveForSegment; 
+                tempStart = new Date(segmentEnd.getTime() + 86400000);
+            }
+        } else {
+            let netTotal = Math.max(0, totalDays - dies);
+            earnedTotalActual = netTotal / den;
+            earnedTotalCapped = earnedTotalActual;
+        }
+        return { earnedActual: earnedTotalActual, earned: earnedTotalCapped, netTotal: Math.max(0, totalDays - dies), den: den, totalDays: totalDays, isCapped15: isCapped15 };
+    }
+
+    function runCalcEL() {
+        let r = document.getElementById('elRate').value;
+        let prev = parseVal(document.getElementById('prevBalance').value);
+        let d1v = document.getElementById('dFrom').value;
+        let d2v = document.getElementById('dTo').value;
+        let apptV = document.getElementById('apptDate').value;
+        let dies = parseInt(document.getElementById('diesnon').value) || 0;
+
+        if (r === '22pt' && !apptV) { 
+            showAlert("Warning! Please enter Date of Entry in Service."); 
+            return; 
+        }
+
+        if (!d1v || !d2v) { showAlert("Warning! Please enter Duty From and To dates."); return; }
+        let start = new Date(d1v);
+        let end = new Date(d2v);
+
+        if (r === '22') {
+            let maxEndDate = new Date(start);
+            maxEndDate.setFullYear(start.getFullYear() + 1); 
+            maxEndDate.setDate(maxEndDate.getDate() - 1); 
+            
+            if (end > maxEndDate) {
+                let fMax = maxEndDate.getDate().toString().padStart(2,'0')+'/'+(maxEndDate.getMonth()+1).toString().padStart(2,'0')+'/'+maxEndDate.getFullYear();
+                showAlert("Warning! Maximum period allowed for 1/22 (First Year) is one year. (End Date: " + fMax + ")");
+                return;
+            }
+        }
+        if (start > end) { showAlert("Warning! Duty From Date must be before Duty To Date."); return; }
+
+        let res = calculateLogic(r, prev, d1v, d2v, apptV, dies);
+        let maxLimit = (r === '22pt') ? 120 : 300;
+        let isMaxLimited = (res.earned + prev > maxLimit);
+        let totalLeave = Math.min(res.earned + prev, maxLimit);
+        
+        if (isMaxLimited) { showAlert("Warning! Your leave balance has reached the maximum limit."); }
+
+        document.getElementById('resDays').innerHTML = res.totalDays + " - " + dies + " = " + res.netTotal;
+        document.getElementById('resEarned').innerHTML = fmtDisplay(res.earnedActual, res.den, r, false, false);
+        document.getElementById('resCredit').innerHTML = fmtDisplay(totalLeave, res.den, r, (r === '22' || r === '22pt'), (isMaxLimited || res.isCapped15));
+    incrementCounter();
+
+    }
+
+    function runCalcBal() {
+        let r = document.getElementById('elRate').value;
+        let prev = parseVal(document.getElementById('prevBalance').value);
+        let d1v = document.getElementById('dFrom').value;
+        let d2v = document.getElementById('dTo').value;
+        let s1v = document.getElementById('sFrom').value;
+        let s2v = document.getElementById('sTo').value;
+        let apptV = document.getElementById('apptDate').value;
+        let dies = parseInt(document.getElementById('diesnon').value) || 0;
+
+        if (r === '22pt' && !apptV) { 
+            showAlert("Warning! Please enter Date of Entry in Service."); 
+            return; 
+        }
+
+        if (!d1v || !d2v) { showAlert("Warning! Please enter Duty Dates."); return; }
+
+        let taken = 0;
+        if (s1v !== "" || s2v !== "") {
+            if (!s1v || !s2v) { showAlert("Warning! Please enter both EL/Surrender dates."); return; }
+            let sStartDate = new Date(s1v);
+            let sEndDate = new Date(s2v);
+            if (sStartDate > sEndDate) { showAlert("Warning! Date order is incorrect."); return; }
+            taken = Math.round((sEndDate - sStartDate) / 86400000) + 1;
+        }
+
+        let res = calculateLogic(r, prev, d1v, d2v, apptV, dies);
+        let maxLimit = (r === '22pt') ? 120 : 300;
+        let isMaxLimited = (res.earned + prev > maxLimit);
+        let balance = Math.min(res.earned + prev, maxLimit) - taken;
+
+        document.getElementById('resSurrDays').innerText = taken;
+        document.getElementById('resBalance').innerHTML = fmtDisplay(balance, res.den, r, (r === '22' || r === '22pt'), (isMaxLimited || res.isCapped15));
+        
+        if (balance < 0) { showAlert("Warning! Taken leave exceeds available balance."); }
+            incrementCounter();
+
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let prevBalInput = document.getElementById('prevBalance');
+        if (prevBalInput) {
+            prevBalInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9\s/]/g, '');
+            });
+        }
+    });
+</script>
