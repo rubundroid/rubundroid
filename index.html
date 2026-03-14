@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
     <body>
+        let map = {"11":"12 1/11", "22":"12 1/22", "22pt":"12 1/22", "20":"12 1/20"};
 <div style="font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; width: 100%; padding: 0 10px; box-sizing: border-box;">
     <div style="max-width: 550px; width: 100%; padding: 25px; border: 2px solid #1a73e8; border-radius: 15px; background: #ffffff; box-shadow: 0 5px 20px rgba(0,0,0,0.15); box-sizing: border-box; position: relative;">
         
@@ -84,7 +85,7 @@
 
 
 <script>
-    const counterNamespace = "sparktips-el-calculator"; 
+       const counterNamespace = "sparktips-el-calculator"; 
     const counterKey = "total-calculations";
 
     // 1. പേജ് തുറക്കുമ്പോൾ നിലവിലെ കൗണ്ട് കാണിക്കാൻ
@@ -118,7 +119,6 @@
     // പേജ് ലോഡ് ആകുമ്പോൾ നിലവിലെ കൗണ്ട് എടുക്കാൻ ഇത് സഹായിക്കും
     window.onload = getInitialCount;
 
-  
     function showAlert(msg) {
         document.getElementById('alertMsg').innerText = msg;
         document.getElementById('customAlert').style.display = 'block';
@@ -281,7 +281,6 @@
         if (isMaxLimited) { showAlert("Warning! Your leave balance has reached the maximum limit."); }
 
         document.getElementById('resDays').innerHTML = res.totalDays + " - " + dies + " = " + res.netTotal;
-    
         document.getElementById('resEarned').innerHTML = fmtDisplay(res.earnedActual, res.den, r, false, false);
         document.getElementById('resCredit').innerHTML = fmtDisplay(totalLeave, res.den, r, (r === '22' || r === '22pt'), (isMaxLimited || res.isCapped15));
     incrementCounter();
